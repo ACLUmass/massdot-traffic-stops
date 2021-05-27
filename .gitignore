@@ -1,0 +1,6 @@
+.R*
+*.Rproj
+.Rproj.user
+census_crap/
+safe/
+figures/

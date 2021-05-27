@@ -1,0 +1,186 @@
+/*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+Custom CSS for SJC 12926 COVID-19 Tracker Shiny App
+- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+Thank you: https://shiny.rstudio.com/articles/css.html
+- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
+
+/* Define GT America font */
+/* CSS modified from aclum.org: https://www.aclum.org/sites/default/files/css/css_EjcJzxzhvjcsFc2zO64tGCpzBzxgdDr78RRvkT__FRA.css */
+
+/* GT America Condensed Regular */
+@font-face {
+  font-family:'gtamcond';
+  src: url("fonts/gtamerica/GT-America-Condensed-Regular.woff2") format('woff2');
+  font-weight:400;
+}
+
+/* GT America Condensed Bold */
+@font-face {
+  font-family:'gtamcond';
+  src: url("fonts/gtamerica/GT-America-Condensed-Bold.woff2") format('woff2');
+  font-weight:600;
+}
+
+/* GT America Regular */
+@font-face {
+  font-family:'gtam';
+  src: url("fonts/gtamerica/GT-America-Standard-Regular.woff2") format('woff2');
+  font-weight:400;
+}
+
+/* GT America Bold */
+@font-face {
+  font-family:'gtam';
+  src: url("fonts/gtamerica/GT-America-Standard-Bold.woff2") format('woff2');
+  font-weight:600;
+}
+
+
+body {
+  font-family: 'gtam', sans-serif;
+  margin-left: 5%;
+  margin-right: 5%;
+}
+
+#title {
+  background-color: #3c3532;
+  color: white;
+  width: 120%;
+  margin-left: -8%;
+  margin-right: -8%;
+  padding-bottom: 10px;
+  height: 75px;
+}
+
+#title h2 {
+  padding-top: 20px;
+  padding-left: 15px;
+  display:inline;
+  position: relative;
+  top: 5px;
+}
+
+#car_icon {
+  height: 40px;
+  display: inline;
+  margin-left: 15px;
+}
+
+#title_and_icon {
+  border-bottom: white dashed 4px;
+  margin-left: 40px;
+  position: relative;
+  top: 10px;
+}
+
+.tabbable {
+  max-width: 750px;
+}
+
+/* Fix dropdown cutoff issue */
+.shiny-split-layout > div {
+  overflow: visible;
+}
+
+/* Update bar to match ACLUM website */
+.well.col-sm-3 {
+  background-color: #3c3532;
+  border-radius: 0;
+  margin-top: -1px;
+  border: none;
+}
+
+.col-sm-9 {
+  padding-top: 2rem;
+}
+
+.nav-pills>li.active>a, 
+.nav-pills>li.active>a:focus, 
+.nav-pills>li.active>a:hover {
+  background-color: #ef404d;
+  color: white;
+}
+
+.nav-pills>li>a {
+  color: white;
+  border-radius: 0px;
+  text-transform: uppercase;
+  font-weight: bold;
+  font-family: gtamcond;
+}
+
+.nav>li>a:focus, 
+.nav>li>a:hover {
+  text-decoration: none;
+  background-color: #eee;
+  color: #423a38;
+}
+
+h1, h2, h3, h4 {
+  text-transform: uppercase;
+  font-weight: bold;
+  font-family: gtamcond;
+}
+
+h4 {
+  opacity: .5;
+  display: inline;
+  font-weight: 600;
+  font-size: 1.5rem;
+}
+
+a[data-value="External Resources"],
+a[data-value="Tests & Positives Over Time"],
+a[data-value="Mapping County Trends"]
+{
+  border-bottom: 1px solid #eee;
+}
+
+#time_type {
+  text-align: center;
+}
+
+#internal_well {
+  border-radius: 0px;
+}
+
+#internal_well .form-group {
+  margin-bottom: -5px;
+}
+
+#internal_well .shiny-input-radiogroup {
+  margin-bottom: 2rem;
+}
+
+#internal_well #radio_prompt {
+  margin-bottom: 0px;
+}
+
+#internal_well .selectize-input {
+  border-radius: 0px;
+}
+
+#internal_well p {
+  font-weight: bold
+}
+
+#internal_well ul {
+  font-style: italic;
+  margin-bottom: 0px;
+}
+
+#footer {
+  margin-top: 20px;
+}
+
+.nav-pills .navbar-brand {
+  color: #fbb416;
+  padding-left: 5px;
+  text-transform: uppercase;
+  font-family: gtamcond;
+  font-weight: bold;
+}
+
+.selectize-control {
+  white-space: normal;
+}
