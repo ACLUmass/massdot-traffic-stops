@@ -53,7 +53,7 @@ fluidPage(
                                     # h3("Explore Traffic Stops by Massachusetts Police"),
                                     br(),
                                     p("Explore the complete record of police traffic stops in Massachusetts over the past two decades - almost 12 million stops - as documented in data obtained from the Massachusetts Department of Transportation (MassDOT)."),
-                                    
+                           
                            div(id="dev-wait",
                                wellPanel(
                                  icon('hourglass-half'),
@@ -133,10 +133,10 @@ fluidPage(
                            tabPanel("Stops by town", 
                                     wellPanel(id="internal_well",
                                       splitLayout(
-                                      dateInput("town_start_date", "Start Date",
-                                                value = "2002-01-01", min="2002-01-01", max="2021-02-04"),
-                                      dateInput("town_end_date", "Start Date",
-                                                value = "2021-02-04", min="2002-01-01", max="2021-02-04")),
+                                        dateInput("town_start_date", "Start Date",
+                                                  value = "2002-01-01", min="2002-01-01", max="2021-02-04"),
+                                        dateInput("town_end_date", "Start Date",
+                                                  value = "2021-02-04", min="2002-01-01", max="2021-02-04")),
                                       splitLayout(
                                         radioButtons("towns_radio", "Value Type", 
                                                      choices=c("Total stops", 
@@ -162,7 +162,7 @@ fluidPage(
                                     radioButtons("time_type", "Plot by", choices=c("Year", "Month", "Day"), selected="Month", inline=T),#style="text-align: center;"),
                                     withSpinner(plotlyOutput("stops_v_time"), type=4, color="#b5b5b5", size=0.5)
                                     ),
-                                    
+                           
                            # Stops by offense ------------------------------------------
                            tabPanel("Stops by offense", 
                                     wellPanel(id="internal_well",
@@ -232,8 +232,7 @@ fluidPage(
                                       actionButton("town_button", "Go")
                                     ),
                                     withSpinner(plotlyOutput("town_demog"), type=4, color="#b5b5b5", size=0.5)),
-                           tabPanel("stops by violation type", ""),
-                           
+
                            "Officer ID Lookup",
                            # Officer stops by race ------------------------------------
                            tabPanel("Stops by Race", 
@@ -253,8 +252,6 @@ fluidPage(
                                       actionButton("officer_button", "Go")
                                     ),
                                     withSpinner(plotlyOutput("officer_demog"), type=4, color="#b5b5b5", size=0.5)
-                                    # splitLayout(withSpinner(plotlyOutput("officer_demog_agency"), type=4, color="#b5b5b5", size=0.5),
-                                    #             withSpinner(plotlyOutput("officer_demog_state"), type=4, color="#b5b5b5", size=0.5))
                                     )
                            
                           

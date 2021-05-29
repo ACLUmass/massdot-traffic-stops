@@ -177,14 +177,37 @@ a[data-value="Mapping County Trends"]
 
 #internal_well .shiny-input-radiogroup {
   margin-bottom: 2rem;
+  margin-top: 20px;
 }
 
 #internal_well #radio_prompt {
   margin-bottom: 0px;
 }
 
-#internal_well .selectize-input {
+.form-control,
+.selectize-input {
   border-radius: 0px;
+}
+
+.checkbox {
+  margin-top: 45px;
+}
+
+#internal_well .action-button {
+  display: block;
+  margin-top: 20px;
+  margin-left: auto;
+  margin-right: auto;
+  min-width: 100px;
+  border-radius: 0px;
+  border-color: #ef404d;
+  background-color: #ef404d;
+  color: white;
+  font-weight: 600;
+}
+
+#internal_well .action-button:focus {
+  outline: none 2px #000;
 }
 
 #internal_well p {
@@ -194,6 +217,14 @@ a[data-value="Mapping County Trends"]
 #internal_well ul {
   font-style: italic;
   margin-bottom: 0px;
+}
+
+#download_div {
+  text-align: center;
+}
+
+#download_div .shiny-spinner-placeholder {
+  height: 100px !important;
 }
 
 #footer {
@@ -208,6 +239,6 @@ a[data-value="Mapping County Trends"]
   font-weight: bold;
 }
 
-.selectize-control {
+.selectize-control, th, td {
   white-space: normal;
 }

@@ -8,19 +8,8 @@ library(lubridate)
 library(scales)
 library(shinyjs)
 
-# all_agencies <- stops_df[order(agency), list(agency)] %>%
-#     unique() %>%
-#     mutate(agency = str_extract(agency, "(?<=: ).*"),
-#            agency = trimws(agency)) %>%
-#     unique()
-# 
-# write_rds(all_agencies, "data/all_agencies.RDS")
-
-# stops_df[, officer] %>% unique()
-
-# Define server logic required to draw a histogram
 function(input, output, session) {
-        
+    
     # Create a Progress object
     progress <- shiny::Progress$new()
     on.exit(progress$close())
@@ -48,17 +37,6 @@ function(input, output, session) {
                 "Unknown" = "white",
                 "Other" = "white")
     
-    # # Delay tab load ------------------------------------------------------------------
-    # 
-    # plotData <- reactiveVal()
-    # 
-    # observeEvent(input$panels, {
-    #     if (input$panels == "Stops by Race"){
-    #         req(is.null(plotData(s)))
-    #         print("Stops code is run")
-    #         plotData(render_officer_demog_plot())
-    #     }
-    # })
     named_colors <- readRDS("data/offense_colors.rds")
     
     violations <- read_csv("data/violations.csv",
@@ -99,9 +77,9 @@ function(input, output, session) {
         download_values$agency <-       input$download_agency
         download_values$start_date <-   input$download_start_date
         download_values$end_date <-     input$download_end_date
-    
-    })
         
+    })
+    
     output$download_size <- renderText({
         validate(
             need(download_values$agency, 'Please select filters and press "Go" to view estimated download size.')
@@ -112,16 +90,16 @@ function(input, output, session) {
             (download_values$officer != "All officers" |
              download_values$officer != "") &
             download_values$end_date - download_values$start_date > years(2)) {
-        
+            
             cat("no!!!\n")
             disable("download_button")
             download_values$filtered <- F
             
-                
+            
             validate(need(download_values$filtered, "For a manageable download, please either select a single town, agency, or officer ID; or restrict the date range to less than two years."))
-                    
+            
         } else {
-                
+            
             download_values$filtered <- T
             cat("applying data filters\n")
             
@@ -138,7 +116,7 @@ function(input, output, session) {
             
             enable("download_button")
         }
-        
+    
         
         cat("printing object size\n")
         
@@ -427,11 +405,10 @@ function(input, output, session) {
     })
     
     # Agency stats ------------------------------------------------------------
-    # Top towns
-    # Top officers
+    
     # Stops made per officer
     
-    agency_values <- reactiveValues(total_stops = NULL)
+    agency_values <- reactiveValues(done = NULL)
     
     observeEvent(input$agency_button, {
         # Direct input
@@ -439,17 +416,13 @@ function(input, output, session) {
         agency_values$start_date <- input$agency_start_date
         agency_values$end_date <- input$agency_end_date
         
-        # Filter the data
-        # data <- stops_df[agency == input$agency_agency & 
-        #                      date >= input$agency_start_date &
-        #                      date <= input$agency_end_date]
-        
         # Calculate total stops
-        agency_values$total_stops <- data[, .N]
+        agency_values$total_stops <- stops_df[agency == agency_values$agency & 
+                                                  date >= agency_values$start_date &
+                                                  date <= agency_values$end_date, .N]
         
         # Top towns
-        output$top_towns <- renderTable({ 
-            stops_df[agency == agency_values$agency & 
+        agency_values$top_towns <- stops_df[agency == agency_values$agency & 
                          date >= agency_values$start_date &
                          date <= agency_values$end_date, .N, loc] %>%
                 slice_max(N, n=10) %>%
@@ -457,7 +430,6 @@ function(input, output, session) {
                 rename(`Town/City` = loc,
                        `Number of Stops` = N) %>%
                 head(10)
-            })  
         
         # Top officers
         output$top_officers <- renderTable({ 
@@ -473,29 +445,31 @@ function(input, output, session) {
                 head(10)
             })  
         
-        # Top reasons
-        output$top_offenses <- renderTable({ 
-        
-            offenses_df[which(offenses_df$citation %in% 
-                                  stops_df[agency == agency_values$agency & 
-                                               date >= agency_values$start_date &
-                                               date <= agency_values$end_date, citation]), 
-                        .N, offense] %>%
-                slice_max(N, n=10) %>%
-                separate(offense, into=c(NA, "desc"), sep=": ") %>%
-                separate(desc, into = c("Offense", "Statute"), sep= " \\* | (?=c)") %>%
-                mutate(N = number(N, big.mark=",", accuracy=1)) %>%
-                rename(`Number of Stops` = N)
-        })
+        agency_values$done <- T
         
     })
     
-    
+    output$top_towns <- renderTable({agency_values$top_towns})
     
     output$agency_dashboard <- renderUI({
         validate(
-            need(agency_values$total_stops, 'Please select filters and press "Go."')
+            need(agency_values$done, 'Please select filters and press "Go."')
         )
+        
+        # (this calculation lives in here to prevent early load)
+        top_offenses <- offenses_df[which(offenses_df$citation %in% 
+                              stops_df[agency == agency_values$agency & 
+                                           date >= agency_values$start_date &
+                                           date <= agency_values$end_date, citation]), 
+                    .N, offense] %>%
+            slice_max(N, n=10) %>%
+            separate(offense, into=c(NA, "desc"), sep=": ") %>%
+            separate(desc, into = c("Offense", "Statute"), sep= " \\* | (?=c)") %>%
+            mutate(N = number(N, big.mark=",", accuracy=1)) %>%
+            rename(`Number of Stops` = N)
+        
+        output$top_offenses <- renderTable({top_offenses})
+        
         
         tagList(
             h2(number(agency_values$total_stops, big.mark=","), style="text-align: center;"),
@@ -655,7 +629,7 @@ function(input, output, session) {
         plot_ly(sort=F,
                 direction = "clockwise",
                 textfont = list(family = "GT America"),
-                hovertemplate = '<i>Race</i>: %{label}<br><i>Number stopped</i>: %{value} (%{percent})',
+                hovertemplate = '<i>Race</i>: %{label}<br><i>Number stopped</i>: %{value} (%{percent})<extra></extra>',
                 marker = list(line = list(color = 'lightgrey', width = 1)),
                 labels = ~var, values = ~n ) %>%
             add_pie(data = data_town, 
@@ -733,7 +707,7 @@ function(input, output, session) {
         plot_ly(sort=F,
                 direction = "clockwise",
                 textfont = list(family = "GT America"),
-                hovertemplate = '<i>Race</i>: %{label}<br><i>Number stopped</i>: %{value} (%{percent})',
+                hovertemplate = '<i>Race</i>: %{label}<br><i>Number stopped</i>: %{value} (%{percent})<extra></extra>',
                 marker = list(line = list(color = 'lightgrey', width = 1)),
                 labels = ~var, values = ~n ) %>%
             add_pie(data = data_officer, 
