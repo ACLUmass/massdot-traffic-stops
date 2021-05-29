@@ -59,6 +59,13 @@ function(input, output, session) {
     #         plotData(render_officer_demog_plot())
     #     }
     # })
+    named_colors <- readRDS("data/offense_colors.rds")
+    
+    violations <- read_csv("data/violations.csv",
+                           col_types = cols(
+                               offense = col_character(),
+                               group = col_character()
+                           ))
     
     # Download data subset ------------------------------------------------------------
     
@@ -346,6 +353,76 @@ function(input, output, session) {
                        ))
                 )
         }
+        
+    })
+    
+    # Stops by offense ----------------------------------------------------------------
+    
+    # Update officer list when agency is selected
+    observeEvent(input$offense_agency, {
+        
+        if (input$offense_agency != "All agencies") {
+            selected_officers <- stops_df[agency == input$offense_agency, 
+                                          list(officer)][order(officer), officer] %>%
+                unique()
+            
+            updateSelectizeInput(session, "offense_officer",
+                                 choices = c("All officers", selected_officers), server=T)
+        } else {
+            updateSelectizeInput(session, "offense_officer",
+                                 choices = c("Please select agency" = ""))
+        }
+    })
+    
+    offense_values <- reactiveValues(town = NULL)
+    
+    observeEvent(input$offense_button, {
+        offense_values$town <- input$offense_town
+        offense_values$agency <- input$offense_agency
+        offense_values$officer <- input$offense_officer
+        offense_values$start_date <- input$offense_start_date
+        offense_values$end_date <- input$offense_end_date
+    })
+    
+    output$offenses <- renderPlotly({
+        validate(
+            need(offense_values$town, 'Please select filters and press "Go."')
+        )
+        
+        data <- offenses_df[
+            which(offenses_df$citation %in% 
+                      stops_df[date >= offense_values$start_date &
+                                   date <= offense_values$end_date &
+                                   (if(offense_values$town != "All cities and towns")
+                                       loc == offense_values$town else T==T) &
+                                   (if(offense_values$agency != "All agencies")
+                                       agency == offense_values$agency else T==T) &
+                                   (if (offense_values$officer != "All officers" &
+                                        offense_values$officer != "")
+                                       officer == offense_values$officer else T==T), citation]), 
+            list(offense)] %>%
+            merge(violations, by = "offense", all.x = T) %>%
+            mutate(group = ifelse(str_detect(group, "Boat|Child|Fuel|Toll|Snow|Freight"), "Other", group)) %>%
+            count(group) %>%
+            arrange(group == "Other", desc(n))
+        
+        offense_colors <- named_colors[data$group]
+        
+        data %>%
+            plot_ly(sort=F,direction = "clockwise",
+                    textfont = list(family = "GT America"),
+                    hovertemplate = '<i>Offense</i>: %{label}<br><i>Number stopped</i>: %{value} (%{percent})<extra></extra>',
+                    marker = list(line = list(color = 'lightgrey', width = 1),#)%>%#,
+                                  colors = offense_colors)) %>%
+            # config(modeBarButtonsToRemove = modeBarButtonsToRemove) %>%
+            add_pie(labels=~group, values=~n,
+                    textposition = "inside") %>%
+            layout(xaxis = list(showgrid = FALSE, zeroline = FALSE, showticklabels = FALSE),
+                   yaxis = list(showgrid = FALSE, zeroline = FALSE, showticklabels = FALSE),
+                   font=list(family = "GT America"),
+                   hoverlabel=list(font = list(family = "GT America")),
+                   legend = list(itemclick=F, itemdoubleclick=F))
+        
         
     })
     
