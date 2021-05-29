@@ -136,6 +136,33 @@ a[data-value="Mapping County Trends"]
   border-bottom: 1px solid #eee;
 }
 
+/* "Please be patient" message*/
+#dev-wait p {
+  display: inline;
+}
+
+#dev-wait h4 {
+  display: inline;
+  margin-left: 1rem;
+  opacity: 1;
+}
+
+#dev-wait em{
+  display: block;
+  margin-top: 1rem;
+}
+
+#dev-wait .well {
+  border-radius: 0px;
+  border: none;
+  margin-top: 2rem;
+}
+
+#dev-wait i {
+  color: darkgray;
+  font-size: 20px;
+}
+
 #time_type {
   text-align: center;
 }
