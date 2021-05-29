@@ -437,6 +437,91 @@ function(input, output, session) {
         )
     })
     
+    # Town overview -------------------------------------------------------------------
+    
+    townover_values <- reactiveValues(done = NULL)
+    
+    observeEvent(input$townover_button, {
+        # Direct input
+        townover_values$town <- input$townover_town
+        townover_values$start_date <- input$townover_start_date
+        townover_values$end_date <- input$townover_end_date
+        
+        # Calculate total stops
+        townover_values$total_stops <- stops_df[loc == townover_values$town & 
+                                                    date >= townover_values$start_date &
+                                                    date <= townover_values$end_date, .N]
+        
+        # Top towns
+        output$town_top_agencies <- renderTable({ 
+            stops_df[loc == townover_values$town & 
+                         date >= townover_values$start_date &
+                         date <= townover_values$end_date &
+                         !is.na(agency), .N, agency] %>%
+                slice_max(N, n=10) %>%
+                mutate(N = number(N, big.mark=",", accuracy=1)) %>%
+                rename(`Agency` = agency,
+                       `Number of Stops` = N) %>%
+                head(10)
+        })  
+        
+        # Top officers
+        output$townover_top_officers <- renderTable({ 
+            
+            stops_df[loc == townover_values$town & 
+                         date >= townover_values$start_date &
+                         date <= townover_values$end_date, .N, .(agency, officer)] %>%
+                filter(!is.na(officer)) %>%
+                slice_max(N, n=10) %>%
+                mutate(N = number(N, big.mark=",", accuracy=1)) %>%
+                rename(Agency = agency,
+                       `Officer ID` = officer,
+                       `Number of Stops` = N) %>%
+                head(10)
+        })  
+        
+        townover_values$done <- T
+        
+    })
+    
+    output$townover_dashboard <- renderUI({
+        validate(
+            need(townover_values$done, 'Please select filters and press "Go."')
+        )
+        
+        # Top reasons (this calculation lives in here to prevent early load)
+        townover_top_offenses <- offenses_df[which(offenses_df$citation %in% 
+                                  stops_df[loc == townover_values$town & 
+                                               date >= townover_values$start_date &
+                                               date <= townover_values$end_date, citation]), 
+                        .N, offense] %>%
+                slice_max(N, n=10) %>%
+                separate(offense, into=c(NA, "desc"), sep=": ") %>%
+                separate(desc, into = c("Offense", "Statute"), sep= " \\* | (?=c)") %>%
+                mutate(N = number(N, big.mark=",", accuracy=1)) %>%
+                rename(`Number of Stops` = N)
+    
+        output$townover_top_offenses <- renderTable({ townover_top_offenses })
+        
+        tagList(
+            h2(number(townover_values$total_stops, big.mark=","), 
+               style="text-align: center;"),
+            p(em("Stops made in", townover_values$town, br(), "between", 
+                 format(townover_values$start_date, "%b %d, %Y"), "and", 
+                 format(townover_values$end_date, "%b %d, %Y")), 
+              style="text-align: center;"),
+            splitLayout(
+                div(h4("Top Agencies"),
+                    tableOutput("town_top_agencies")),
+                div(h4("Most Active Officers"),
+                    tableOutput("townover_top_officers"))
+            ),
+            h4("Most Common Traffic Violations"),
+            tableOutput("townover_top_offenses")
+        )
+    })
+
+    stops_df %>% select(loc) %>% distinct()
     
     # Town's stops by race ------------------------------------------------------------
     
