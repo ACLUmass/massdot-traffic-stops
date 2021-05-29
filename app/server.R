@@ -6,6 +6,7 @@ library(data.table)
 library(leaflet)
 library(lubridate)
 library(scales)
+library(shinyjs)
 
 # all_agencies <- stops_df[order(agency), list(agency)] %>%
 #     unique() %>%
@@ -66,6 +67,7 @@ function(input, output, session) {
         updateTabsetPanel(session, "panels", "Download the Data")
     })
     
+    # Update the list of officers based on the selected agency
     observeEvent(input$download_agency, {
         
         if (input$download_agency == 'All agencies') {
@@ -82,55 +84,60 @@ function(input, output, session) {
         }
     })
     
-    download_values <- reactiveValues(
-        officer = NULL, agency = NULL, 
-        start_date = NULL, end_date = NULL
-    )
+    download_values <- reactiveValues(agency = NULL)
     
     observeEvent(input$download_filters, {
         download_values$officer <-      input$download_officer
+        download_values$town <-         input$download_town
         download_values$agency <-       input$download_agency
         download_values$start_date <-   input$download_start_date
         download_values$end_date <-     input$download_end_date
-    })
     
-    data_to_download <- reactive({
-        
-        # TODO: Add offenses back into this dataset!!
-        
-        if (is.null(download_values$agency)) {
-            return(NULL)
-        } else {
-            cat("applying data filters\n")
-        
-            data_to_download <- stops_df[date >= download_values$start_date &
-                                             date <= download_values$end_date]
-            
-            if (download_values$agency != 'All agencies') {
-                data_to_download <- data_to_download[agency == download_values$agency]
-                
-                if (download_values$officer != 'All officers') {
-                    
-                    data_to_download <- data_to_download[officer == download_values$officer]
-                }
-                
-            } 
-            
-            data_to_download
-        }
-        
     })
-    
+        
     output$download_size <- renderText({
         validate(
-            need(data_to_download(), "1.7 GB")
+            need(download_values$agency, 'Please select filters and press "Go" to view estimated download size.')
         )
+        
+        if (download_values$town == "All cities and towns" & 
+            download_values$agency == "All agencies"  &
+            (download_values$officer != "All officers" |
+             download_values$officer != "") &
+            download_values$end_date - download_values$start_date > years(2)) {
+        
+            cat("no!!!\n")
+            disable("download_button")
+            download_values$filtered <- F
+            
+                
+            validate(need(download_values$filtered, "For a manageable download, please either select a single town, agency, or officer ID; or restrict the date range to less than two years."))
+                    
+        } else {
+                
+            download_values$filtered <- T
+            cat("applying data filters\n")
+            
+            download_values$data <- stops_df[date >= download_values$start_date &
+                                                 date <= download_values$end_date &
+                                                 (if(download_values$town != "All cities and towns")
+                                                     loc == download_values$town else T==T) &
+                                                 (if(download_values$agency != "All agencies")
+                                                     agency == download_values$agency else T==T) &
+                                                 (if (download_values$officer != "All officers" &
+                                                      download_values$officer != "")
+                                                     officer == download_values$officer else T==T)] %>%
+                merge(offenses_df, by="citation", all.x=T, all.y=F)
+            
+            enable("download_button")
+        }
+        
         
         cat("printing object size\n")
         
-        data_to_download()  %>% 
-            object.size() %>%
-            format(units="auto", standard="SI")
+        object.size(download_values$data) %>% 
+            format(units="auto", standard="SI") %>%
+            paste("The dataset with the applied filters is estimated to be", .)
     })
     
     output$download_button <- downloadHandler(
@@ -138,7 +145,7 @@ function(input, output, session) {
         content = function(file) {
             cat("Download commencing!!\n")
             withProgress(message = 'Downloading...', value = 1, {
-                write.csv(data_to_download(), file)
+                write_csv(download_values$data, file)
             })
         }
     )

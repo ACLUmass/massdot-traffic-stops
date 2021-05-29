@@ -4,6 +4,7 @@ library(shinycssloaders)
 library(showtext)
 library(leaflet)
 library(plotly)
+library(shinyjs)
 
 all_agencies <- readRDS("data/all_agencies.RDS")
 all_towns <- readRDS("data/all_towns.rds")
@@ -26,6 +27,7 @@ theme_update(text = element_text(family="gtam"),
 # UI --------------------------------------------------------------------------
 
 fluidPage(
+  useShinyjs(),  # Set up shinyjs
   theme = "massdot_app.css",
           
           # Add favicon          
@@ -100,9 +102,12 @@ fluidPage(
                            
                            # Download data --------------------------------------------
                            tabPanel("Download the Data", 
-                                    h3("Filter"),
                                     wellPanel(id="internal_well",
+                                              p("This page allows you to select a subset of the MassDOT data to download. If you required the entire 2.8 GB dataset, you can download it from GitHub", 
+                                                a("here - ADD LINK.", href="#"), 
+                                                style="font-style: italic; text-align: center; font-weight: 100;"),
                                       splitLayout(
+                                        selectizeInput("download_town", "Town/City", c("All cities and towns", all_towns)),
                                         selectizeInput("download_agency", 
                                                        label="Agency/Department", c("All agencies", all_agencies)),
                                         selectizeInput("download_officer", 
@@ -115,12 +120,12 @@ fluidPage(
                                                   value = "2021-02-04", min="2002-01-01", max="2021-02-04")),
                                       actionButton("download_filters", "Apply Filters")
                                     ),
-                                    h3("Download"),
-                                    "The dataset with the applied filters is estimated to be",
-                                    textOutput("download_size", inline=T),
-                                    br(),
-                                    downloadButton("download_button", "Download")
                                     
+                                    div(id="download_div",
+                                        withSpinner(textOutput("download_size", inline=T), type=4, color="#b5b5b5", size=0.5),
+                                      br(),
+                                      disabled(downloadButton("download_button", "Download"))
+                                      )
                                     ),
                            
                            "Aggregate Statistics",
