@@ -52,6 +52,14 @@ fluidPage(
                                     br(),
                                     p("Explore the complete record of police traffic stops in Massachusetts over the past two decades - almost 12 million stops - as documented in data obtained from the Massachusetts Department of Transportation (MassDOT)."),
                                     
+                           div(id="dev-wait",
+                               wellPanel(
+                                 icon('hourglass-half'),
+                                 h4("Please be patient"),
+                                 em("This dashboard's underlying dataset consists of over 200 million cells across 11.8 million traffic stops. Please have patience as certain pages may take a few seconds to load.")
+                               )
+                           ),
+                                    
                                     h3("About the Data"),
                                     h4("Where did the data come from?"),
                                     "The data displayed here are the result of a", 
