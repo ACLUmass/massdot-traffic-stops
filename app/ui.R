@@ -163,6 +163,26 @@ fluidPage(
                                     withSpinner(plotlyOutput("stops_v_time"), type=4, color="#b5b5b5", size=0.5)
                                     ),
                                     
+                           # Stops by offense ------------------------------------------
+                           tabPanel("Stops by offense", 
+                                    wellPanel(id="internal_well",
+                                              splitLayout(
+                                                selectizeInput("offense_town", "Town/City", c("All cities and towns", all_towns)),
+                                                selectizeInput("offense_agency", 
+                                                               label="Agency/Department", c("All agencies", all_agencies)),
+                                                selectizeInput("offense_officer", 
+                                                               label="Officer ID", 
+                                                               c("Loading, please wait..." = ""))),
+                                              
+                                              splitLayout(
+                                                dateInput("offense_start_date", "Start Date",
+                                                          value = "2002-01-01", min="2002-01-01", max="2021-02-04"),
+                                                dateInput("offense_end_date", "Start Date",
+                                                          value = "2021-02-04", min="2002-01-01", max="2021-02-04")),
+                                              actionButton("offense_button", "Go")),#style="text-align: center;"),
+                                    withSpinner(plotlyOutput("offenses"), type=4, color="#b5b5b5", size=0.5)
+                           ),
+                                    
                            # Agencies ------------------------------------------
                            "Agency Lookup",
                            tabPanel("Agency overview", 
