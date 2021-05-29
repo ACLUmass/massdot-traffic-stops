@@ -181,7 +181,19 @@ fluidPage(
 
                            # TOWN LOOKUP ----------------------------------------------
                            "Town Lookup",
-                           tabPanel("Stops by agency", ""),
+                           
+                           # Town overview ----------------------------------------------
+                           tabPanel("Town overview", 
+                                    wellPanel(id="internal_well",
+                                              selectizeInput("townover_town", "Town/City", all_towns),
+                                              splitLayout(
+                                                dateInput("townover_start_date", "Start Date",
+                                                          value = "2002-01-01", min="2002-01-01", max="2021-02-04"),
+                                                dateInput("townover_end_date", "Start Date",
+                                                          value = "2021-02-04", min="2002-01-01", max="2021-02-04")),
+                                              actionButton("townover_button", "Go")),
+                                    withSpinner(uiOutput("townover_dashboard"), type=4, color="#b5b5b5", size=0.5)
+                                    ),
                            
                            # Town stops by race ---------------------------------------
                            tabPanel("Stops by Race", 
