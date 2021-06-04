@@ -4,3 +4,5 @@
 census_crap/
 safe/
 figures/
+.Renviron
+rsconnect/

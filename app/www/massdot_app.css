@@ -227,6 +227,14 @@ a[data-value="Mapping County Trends"]
   height: 100px !important;
 }
 
+#town_race_legend,  #officer_race_legend {
+  margin-left: auto;
+  margin-right: auto;
+  max-height: 80px;
+  max-width: 100%;
+  display: block;
+}
+
 #footer {
   margin-top: 20px;
 }

@@ -231,6 +231,7 @@ fluidPage(
                                                   value = "2021-02-04", min="2002-01-01", max="2021-02-04")),
                                       actionButton("town_button", "Go")
                                     ),
+                                    hidden(img(src="race_legend.png", id="town_race_legend")),
                                     withSpinner(plotlyOutput("town_demog"), type=4, color="#b5b5b5", size=0.5)),
 
                            "Officer ID Lookup",
@@ -251,6 +252,7 @@ fluidPage(
                                                   value = "2021-02-04", min="2002-01-01", max="2021-02-04")),
                                       actionButton("officer_button", "Go")
                                     ),
+                                    hidden(img(src="race_legend.png", id="officer_race_legend")),
                                     withSpinner(plotlyOutput("officer_demog"), type=4, color="#b5b5b5", size=0.5)
                                     )
                            
