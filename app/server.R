@@ -7,6 +7,7 @@ library(leaflet)
 library(lubridate)
 library(scales)
 library(shinyjs)
+library(sf)
 
 function(input, output, session) {
     
@@ -477,7 +478,7 @@ function(input, output, session) {
               format(agency_values$start_date, "%b %d, %Y"), "and", 
               format(agency_values$end_date, "%b %d, %Y")), 
               style="text-align: center;"),
-            splitLayout(
+            splitLayout(id="dashboard_split",
                 div(h4("Top Cities & Towns"),
                     tableOutput("top_towns")),
                 div(h4("Most Active Officers"),
@@ -554,7 +555,7 @@ function(input, output, session) {
     
         output$townover_top_offenses <- renderTable({ townover_top_offenses })
         
-        tagList(
+        tagList(id="dashboard_split",
             h2(number(townover_values$total_stops, big.mark=","), 
                style="text-align: center;"),
             p(em("Stops made in", townover_values$town, br(), "between", 
@@ -635,7 +636,9 @@ function(input, output, session) {
                 textfont = list(family = "GT America"),
                 hovertemplate = '<i>Race</i>: %{label}<br><i>Number stopped</i>: %{value} (%{percent})<extra></extra>',
                 marker = list(line = list(color = 'lightgrey', width = 1)),
-                labels = ~var, values = ~n ) %>%
+                labels = ~var, values = ~n,
+                textposition = "inside"
+                ) %>%
             add_pie(data = data_town, 
                     name = paste("Stops in", town_values$town, "\n", title_suffix), 
                     domain = list(x = c(0, .5), y = c(0, 1)),
@@ -717,7 +720,8 @@ function(input, output, session) {
                 textfont = list(family = "GT America"),
                 hovertemplate = '<i>Race</i>: %{label}<br><i>Number stopped</i>: %{value} (%{percent})<extra></extra>',
                 marker = list(line = list(color = 'lightgrey', width = 1)),
-                labels = ~var, values = ~n ) %>%
+                labels = ~var, values = ~n,
+                textposition = "inside") %>%
             add_pie(data = data_officer, 
                     name = paste("Officer", officer_values$officer), 
                     domain = list(x = c(.25, 0.75), y = c(0.3, 1)),

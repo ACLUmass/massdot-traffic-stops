@@ -129,12 +129,10 @@ h4 {
   font-size: 1.5rem;
 }
 
-a[data-value="External Resources"],
-a[data-value="Tests & Positives Over Time"],
-a[data-value="Mapping County Trends"]
+/* a[data-value="Download the Data"]
 {
   border-bottom: 1px solid #eee;
-}
+}*/
 
 /* "Please be patient" message*/
 #dev-wait p {
@@ -225,6 +223,15 @@ a[data-value="Mapping County Trends"]
 
 #download_div .shiny-spinner-placeholder {
   height: 100px !important;
+}
+
+.shiny-table {
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.shiny-html-output {
+  text-align: center;
 }
 
 #town_race_legend,  #officer_race_legend {
