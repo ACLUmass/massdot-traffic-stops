@@ -596,9 +596,13 @@ function(input, output, session) {
     })
     
     output$town_demog <- renderPlotly({
+        shinyjs::hide("town_race_legend")
+        
         validate(
             need(town_values$town, 'Please select a city or town.')
         )
+        
+        shinyjs::show("town_race_legend")
         
         cat("calculating town dataset\n")
         
@@ -679,9 +683,13 @@ function(input, output, session) {
     })
     
     output$officer_demog <- renderPlotly({
+        shinyjs::hide("officer_race_legend")
+        
         validate(
             need(officer_values$officer, 'Please select an officer ID.')
         )
+        
+        shinyjs::show("officer_race_legend")
         
         cat("calculating officer dataset\n")
         data_officer <- stops_df[officer == officer_values$officer & 
