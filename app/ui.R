@@ -14,15 +14,8 @@ all_towns <- readRDS("data/all_towns.rds")
 # Set ggplot settings
 theme_set(theme_minimal())
 
-# Load ggplot-friendly font using show_text
-sysfonts::font_add("gtam", "GT-America-Standard-Regular.ttf",
-                   bold = "GT-America-Standard-Bold.ttf")
-sysfonts::font_add("gtam-cond", "GT-America-Condensed-Regular.ttf",
-                   bold = "GT-America-Condensed-Bold.ttf")
-showtext_auto()
-
-theme_update(text = element_text(family="gtam"),
-             plot.title = element_text(family="gtam", face="bold"))
+theme_update(text = element_text(family="GT America"),
+             plot.title = element_text(family="GT America", face="bold"))
 
 # UI --------------------------------------------------------------------------
 
@@ -61,8 +54,8 @@ fluidPage(
                                  em("This dashboard's underlying dataset consists of over 200 million cells across 11.8 million traffic stops. Please have patience as certain pages may take a few seconds to load.")
                                )
                            ),
-                                    
                                     h3("About the Data"),
+                           
                                     h4("Where did the data come from?"),
                                     "The data displayed here are the result of a", 
                                     a(href="https://data.aclum.org/wp-content/uploads/2021/05/2021_01_21-ACLUM-Public-Records-Request-MassDOT-MUC-Data.pdf",
@@ -97,14 +90,14 @@ fluidPage(
                                     
                                     h3("Source Code"),
                                     p("Interested programmers can view the source code for this app, written in R, on",
-                                      a("GitHub - UPDATE URL.", href="#"))
+                                      a("GitHub.", href="https://github.com/ACLUmass/massdot-traffic-stops"))
                            ),
                            
                            # Download data --------------------------------------------
                            tabPanel("Download the Data", 
                                     wellPanel(id="internal_well",
-                                              p("This page allows you to select a subset of the MassDOT data to download. If you required the entire 2.8 GB dataset, you can download it from GitHub", 
-                                                a("here - ADD LINK.", href="#"), 
+                                              p("This page allows you to select a subset of the MassDOT data to download. If you required the entire 2.8 GB dataset, you can download a compressed version from Google Drive", 
+                                                a("here.", href="https://drive.google.com/file/d/1enQXDsXV7bVtrjiUteQ7g04vL1o-Sv7e/view?usp=sharing"), 
                                                 style="font-style: italic; text-align: center; font-weight: 100;"),
                                       splitLayout(
                                         selectizeInput("download_town", "Town/City", c("All cities and towns", all_towns)),
@@ -128,9 +121,9 @@ fluidPage(
                                       )
                                     ),
                            
-                           "Aggregate Statistics",
+                           "Explore the Data:",
                            # Stops by town --------------------------------------------
-                           tabPanel("Stops by town", 
+                           tabPanel("Mapping Stops", 
                                     wellPanel(id="internal_well",
                                       splitLayout(
                                         dateInput("town_start_date", "Start Date",
@@ -184,8 +177,8 @@ fluidPage(
                            ),
                                     
                            # Agencies ------------------------------------------
-                           "Agency Lookup",
-                           tabPanel("Agency overview", 
+                           # "Agency Lookup",
+                           tabPanel("Agency Lookup", 
                                     wellPanel(id="internal_well",
                                       selectizeInput("agency_agency", 
                                                      label="Agency/Department", 
@@ -200,10 +193,10 @@ fluidPage(
                            ),
 
                            # TOWN LOOKUP ----------------------------------------------
-                           "Town Lookup",
+                           # "Town Lookup",
                            
                            # Town overview ----------------------------------------------
-                           tabPanel("Town overview", 
+                           tabPanel("Town Lookup", 
                                     wellPanel(id="internal_well",
                                               selectizeInput("townover_town", "Town/City", all_towns),
                                               splitLayout(
@@ -216,7 +209,7 @@ fluidPage(
                                     ),
                            
                            # Town stops by race ---------------------------------------
-                           tabPanel("Stops by Race", 
+                           tabPanel("Race of Stops by Town", 
                                     wellPanel(id="internal_well",
                                       splitLayout(
                                         selectizeInput("town_town", "Town/City", all_towns),
@@ -234,9 +227,9 @@ fluidPage(
                                     hidden(img(src="race_legend.png", id="town_race_legend")),
                                     withSpinner(plotlyOutput("town_demog"), type=4, color="#b5b5b5", size=0.5)),
 
-                           "Officer ID Lookup",
+                           # "Officer ID Lookup",
                            # Officer stops by race ------------------------------------
-                           tabPanel("Stops by Race", 
+                           tabPanel("Race of Stops by Officer", 
                                     wellPanel(id="internal_well",
                                       splitLayout(
                                         selectizeInput("officer_agency", 
@@ -270,6 +263,6 @@ fluidPage(
                     img(src="D4J-logo.png", height="50px", 
                         style="display: inline; margin: 10px;"))),
               p("Please contact data4justice@aclum.org with questions.", align="center", style="opacity: 0.6;"),
-              p("Icons by Those Icons from", a("flaticon.com", href="https://www.flaticon.com/free-icon/police_811976"), align="center", style="opacity: 0.6;")
+              p("Icons by FontAwesome and", a("Flaticon", href="https://www.flaticon.com/free-icon/police_811976"), align="center", style="opacity: 0.6; margin-top: -10px; font-size: 1rem;")
           )
 )
