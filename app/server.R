@@ -165,7 +165,7 @@ function(input, output, session) {
         
         if (input$towns_radio == "Stops per capita") {
             stops_sf <- stops_sf %>%
-                mutate(N = N / pop)
+                mutate(N = (N / pop) * 1e3)
         }
         
         stops_per_county$data <- stops_sf
@@ -190,23 +190,30 @@ function(input, output, session) {
             need(stops_per_county$data, 'Please select date range and press "Go."')
         )
         
-        palette_domain <- if (stops_per_county$log) log10(stops_per_county$data$N) 
-        else stops_per_county$data$N
+        palette_domain <- if (stops_per_county$log) log10(stops_per_county$data$N) else stops_per_county$data$N
+        palette_domain <- replace(palette_domain, 
+                                  palette_domain == -Inf, NA)
         
         if (stops_per_county$percap == "Total stops") {
             legend_title <- "<a style='font-family:GT America; color: dimgrey'>Total <br>traffic stops</a>"
             label_accuracy <- 1
             label_suffix <- ""
         } else {
-            legend_title <- "<a style='font-family:GT America; color: dimgrey'>Traffic stops<br>per capita</a>"
-            label_accuracy <- 0.001
-            label_suffix <- "per capita"
+            legend_title <- "<a style='font-family:GT America; color: dimgrey'>Traffic stops<br>per 1,000</a>"
+            label_accuracy <- 1
+            label_suffix <- "per 1,000 population"
         }
         
         pal_total_stops <- colorNumeric(
             palette = "inferno",
             domain = palette_domain,
-            na.color = "grey" #scales::viridis_pal()(10) %>% tail(1)
+            na.color = viridis_pal(option="inferno")(10) %>% head(1)
+        )
+        
+        pal_total_stops_noNA <- colorNumeric(
+            palette = "inferno",
+            domain = palette_domain,
+            na.color = NA
         )
         
         leaflet(options = leafletOptions(attributionControl = T)) %>%
@@ -222,11 +229,11 @@ function(input, output, session) {
                                         htmltools::HTML),
                         color="none",
                         group="poly")  %>%
-            addLegend(pal = pal_total_stops,
+            addLegend(pal = pal_total_stops_noNA,
                       values = palette_domain,
                       labFormat = stopsLabelFormat(log=stops_per_county$log),
                       position = "topright",
-                      title = legend_title
+                      title = legend_title,
             )  %>%
             addEasyButton(easyButton(
                 icon="fa-home", title="Reset",
