@@ -88,6 +88,16 @@ fluidPage(
                                     "The data sourced for all visualizations on this site are available for download",
                                       actionLink("link_to_download", "here."),
                                     
+                           div(id="dev-wait",
+                               wellPanel(
+                                 icon('exclamation-triangle'),
+                                 h4("Disclaimer"),
+                                 em("Based on discussions with MassDOT, ACLUM understands that MassDOT’s historical record of traffic stops can change due to updates in reporting requirements, corrections of records to reflect successful challenges of issued citations, delays by municipalities in reporting their warnings and citations, and other factors. See", 
+                                    a(href="X", "[SHOULD COVER IN BLOG POST]."), 
+                                    "Therefore, the record of traffic stops presented here reflects only the MassDOT database as it was on February 4, 2021.",)
+                               )
+                           ),
+                                    
                                     h3("Source Code"),
                                     p("Interested programmers can view the source code for this app, written in R, on",
                                       a("GitHub.", href="https://github.com/ACLUmass/massdot-traffic-stops"))
