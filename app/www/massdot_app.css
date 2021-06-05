@@ -187,10 +187,6 @@ h4 {
   border-radius: 0px;
 }
 
-.checkbox {
-  margin-top: 45px;
-}
-
 #internal_well .action-button {
   display: block;
   margin-top: 20px;
@@ -232,6 +228,38 @@ h4 {
 
 .shiny-html-output {
   text-align: center;
+}
+
+#log-tooltip p {
+    font-weight: 400;
+}
+
+#log-tooltip {
+  font-family: gtam;
+}
+
+.tooltip-inner {
+    max-width: 300px;
+    color: #444;
+    background-color: white;
+    border: 1.5px solid #444;
+}
+
+.tooltip.bottom .tooltip-arrow  {
+  border-color: #444;
+}
+
+#town_log_span{
+  margin-top: 20px;
+}
+
+#town_log_span b {
+  margin-bottom: 5px;
+}
+
+#town_log_span .form-group,
+#town_log_span .checkbox {
+  display: inline;
 }
 
 #town_race_legend,  #officer_race_legend {
