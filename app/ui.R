@@ -9,6 +9,16 @@ library(shinyjs)
 all_agencies <- readRDS("data/all_agencies.RDS")
 all_towns <- readRDS("data/all_towns.rds")
 
+log_tooltip_html <- "
+<div id='log-tooltip' width=20px>
+    <b>What is a logarithmic scale?</b>
+    <p>Logarithmic scales are an alternative way of presenting numerical data that can more helpfully represent relative difference between wide-ranging values.</p>
+    
+    <p>Instead of spacing values along a scale linearly (e.g., 1, 2, 3, 4), a logarithmic scale spaces out values logarithmically (e.g., 1, 10, 100, 1,000).</p>
+    <img width=200px src='log_example.png' />
+</div>
+"
+
 # Initialization --------------------------------------------------------------
 
 # Set ggplot settings
@@ -28,6 +38,17 @@ fluidPage(
               tags$link(rel = "shortcut icon", href = "favicon.ico"),
               tags$link(rel = "icon", type = "image/png", sizes = "512x512", href = "favicon.png")
           ),
+          
+          # Add javascript for log tooltip
+          tags$script(HTML('
+               $( document ).on("shiny:sessioninitialized", function(event) {
+                    $(\'a[data-toggle="tooltip"]\').tooltip({
+                        animated: "fade",
+                        placement: "bottom",
+                        html: true
+                    });      
+               });'
+          )),
           
           # App title
           div(id="title",
@@ -142,10 +163,16 @@ fluidPage(
                                                   value = "2021-02-04", min="2002-01-01", max="2021-02-04")),
                                       splitLayout(
                                         radioButtons("towns_radio", "Value Type", 
-                                                     choices=c("Total stops", 
+                                                     choiceValues=c("Total stops", 
                                                                "Stops per capita"),
-                                                     selected="Total stops", inline=T),
-                                        checkboxInput("town_log", "Plot logarithmic scale", T)),
+                                                     choiceNames=c("Total stops", 
+                                                                    "Stops per 1,000 population"),
+                                                     selected="Total stops", inline=F),
+                                        div(id="town_log_span",
+                                            div(tags$b("Numeric Scale")),
+                                             checkboxInput("town_log", "Plot logarithmic scale", value=T),
+                                             a(icon("info-circle"), id="log_tooltip",
+                                                        `data-toggle`="tooltip", title=log_tooltip_html))),
                                       actionButton("map_stops_button", "Go")),
                                     withSpinner(leafletOutput("stops_by_town"), type=4, color="#b5b5b5", size=0.5)
                                     
