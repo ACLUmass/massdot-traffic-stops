@@ -213,6 +213,15 @@ h4 {
   margin-bottom: 0px;
 }
 
+#internal_well em {
+  margin-bottom: 1rem;
+  display: block;
+}
+
+div[data-value="Stops over time"] label span {
+  font-style: italic;
+}
+
 #download_div {
   text-align: center;
 }

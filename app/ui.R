@@ -181,6 +181,7 @@ fluidPage(
                            # Stops over time ------------------------------------------
                            tabPanel("Stops over time", 
                                     wellPanel(id="internal_well",
+                                              em("Select a town, agency, or officer to show all stops over time:"),
                                       splitLayout(
                                         selectizeInput("time_town", "Town/City", c("All cities and towns", all_towns)),
                                         selectizeInput("time_agency", 
@@ -188,6 +189,16 @@ fluidPage(
                                         selectizeInput("time_officer", 
                                                        label="Officer ID", 
                                                        c("Loading, please wait..." = ""))),
+                                      checkboxInput("compare_time", label="Select a second town, agency, or officer to compare?", value=F),
+                                      conditionalPanel(
+                                        condition = "input.compare_time == true",
+                                        splitLayout(
+                                          selectizeInput("time_town2", "Town/City", c("All cities and towns", all_towns)),
+                                          selectizeInput("time_agency2", 
+                                                         label="Agency/Department", c("All agencies", all_agencies)),
+                                          selectizeInput("time_officer2", 
+                                                         label="Officer ID", 
+                                                         c("Loading, please wait..." = "")))),
                                     actionButton("time_button", "Go")),
                                     radioButtons("time_type", "Plot by", choices=c("Year", "Month", "Day"), selected="Month", inline=T),#style="text-align: center;"),
                                     withSpinner(plotlyOutput("stops_v_time"), type=4, color="#b5b5b5", size=0.5)
