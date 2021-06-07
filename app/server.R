@@ -526,10 +526,10 @@ function(input, output, session) {
                          date >= agency_values$start_date &
                          date <= agency_values$end_date, .N, loc] %>%
                 slice_max(N, n=10) %>%
-                mutate(N = number(N, big.mark=",", accuracy=1)) %>%
-                rename(`Town/City` = loc,
-                       `Number of Stops` = N) %>%
-                head(10)
+                mutate(Rank = min_rank(-N),
+                       N = number(N, big.mark=",", accuracy=1)) %>%
+                head(10) %>%
+                select(Rank, `Town/City`=loc, `Number of Stops`=N)
         
         # Top officers
         output$top_officers <- renderTable({ 
@@ -539,10 +539,10 @@ function(input, output, session) {
                          date <= agency_values$end_date, .N, officer] %>%
                 filter(!is.na(officer)) %>%
                 slice_max(N, n=10) %>%
-                mutate(N = number(N, big.mark=",", accuracy=1)) %>%
-                rename(`Officer ID` = officer,
-                       `Number of Stops` = N) %>%
-                head(10)
+                mutate(Rank = min_rank(-N),
+                       N = number(N, big.mark=",", accuracy=1)) %>%
+                head(10) %>%
+                select(Rank, `Officer ID` = officer, `Number of Stops`=N)
             })  
         
         agency_values$done <- T
@@ -603,17 +603,17 @@ function(input, output, session) {
                                                     date >= townover_values$start_date &
                                                     date <= townover_values$end_date, .N]
         
-        # Top towns
+        # Top agencies
         output$town_top_agencies <- renderTable({ 
             stops_df[loc == townover_values$town & 
                          date >= townover_values$start_date &
                          date <= townover_values$end_date &
                          !is.na(agency), .N, agency] %>%
                 slice_max(N, n=10) %>%
-                mutate(N = number(N, big.mark=",", accuracy=1)) %>%
-                rename(`Agency` = agency,
-                       `Number of Stops` = N) %>%
-                head(10)
+                mutate(Rank = min_rank(-N),
+                       N = number(N, big.mark=",", accuracy=1)) %>%
+                head(10) %>%
+                select(Rank, `Agency` = agency, `Number of Stops`=N)
         })  
         
         # Top officers
@@ -624,11 +624,11 @@ function(input, output, session) {
                          date <= townover_values$end_date, .N, .(agency, officer)] %>%
                 filter(!is.na(officer)) %>%
                 slice_max(N, n=10) %>%
-                mutate(N = number(N, big.mark=",", accuracy=1)) %>%
-                rename(Agency = agency,
-                       `Officer ID` = officer,
-                       `Number of Stops` = N) %>%
-                head(10)
+                mutate(Rank = min_rank(-N),
+                       N = number(N, big.mark=",", accuracy=1)) %>%
+                head(10) %>%
+                select(Rank, `Officer ID` = officer,
+                       `Agency` = agency, `Number of Stops`=N)
         })  
         
         townover_values$done <- T
