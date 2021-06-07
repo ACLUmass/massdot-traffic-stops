@@ -262,12 +262,55 @@ function(input, output, session) {
         }
     })
     
+    observeEvent(input$time_agency2, {
+        if (!input$time_agency2 %in% c("All agencies", "--")) {
+            selected_officers <- stops_df[agency == input$time_agency2, 
+                                          list(officer)][order(officer), officer] %>%
+                unique()
+            
+            updateSelectizeInput(session, "time_officer2",
+                                 choices = c("All officers", selected_officers), server=T)
+        } else {
+            updateSelectizeInput(session, "time_officer2",
+                                 choices = c("Please select agency" = ""))
+        }
+    })
+    
     time_values <- reactiveValues(town = NULL)
+    
+    get_legend_name <- function(loc, agency, officer) {
+        if (officer != "All officers" & 
+            officer != "") {
+            if (loc == "All cities and towns") {
+                name <- paste("Stops by Officer", officer, "of the", agency) 
+            } else {
+                name <- paste("Stops by Officer", officer, "of the", agency, "in", loc) 
+            }
+        } else if (agency != "All agencies") {
+            if (loc != "All cities and towns") {
+                name <- paste("Stops by the", agency, "in", loc)
+            } else {
+                name <- paste("Stops by the", agency)
+            }
+        } else if (loc != "All cities and towns") {
+            name <- paste("Stops in", loc)
+        } else {
+            name <- "All stops"
+        }
+        
+        return(name)
+    }
     
     observeEvent(input$time_button, {
         time_values$town <- input$time_town
         time_values$agency <- input$time_agency
         time_values$officer <- input$time_officer
+        
+        time_values$compare <- input$compare_time
+        
+        time_values$town2 <- input$time_town2
+        time_values$agency2 <- input$time_agency2
+        time_values$officer2 <- input$time_officer2
         
         cat(time_values$town, time_values$agency, time_values$officer, "\n")
         cat("recalculating data...\n")
@@ -282,6 +325,21 @@ function(input, output, session) {
             .(date, year = year(date), 
               month = floor_date(date, "month"))]
         
+        if (time_values$compare) {
+            time_values$data2 <- stops_df[
+                (if(time_values$town2 != "All cities and towns") 
+                    loc == time_values$town2 else T==T) &
+                    (if(time_values$agency2 != "All agencies") 
+                        agency == time_values$agency2 else T==T) &
+                    (if (time_values$officer2 != "All officers" & 
+                         time_values$officer2 != "")
+                        officer == time_values$officer2 else T==T),
+                .(date, year = year(date), 
+                  month = floor_date(date, "month"))]
+        } else {
+            time_values$data2 <- NULL
+        }
+        
         # View(time_values$data)
     })
     
@@ -291,26 +349,35 @@ function(input, output, session) {
         )
         
         data <- time_values$data
+        data2 <- if (time_values$compare) time_values$data2 else NULL
+        
+        cat("data2?", !is.null(data2))
         
         if (input$time_type == "Year") {
             link <- "in"
             date_format <- "%Y"
             data <- data[year < 2021, .N, .(x=year)]
+            data2 <- if (time_values$compare) data2[year < 2021, .N, .(x=year)] else NULL
+            
         } else if (input$time_type == "Month") {
             link <- "in"
             date_format <- "%b %Y"
             data <- data[month < ymd("20210201"), .N, .(x=month)]
+            data2 <- if (time_values$compare) data2[month < ymd("20210201"), .N, .(x=month)] else NULL
+            
         } else if (input$time_type == "Day") {
             link <- "on"
             date_format <- "%b %d, %Y"
             data <- data[, .N, .(x=date)]
+            data2 <- if (time_values$compare) data2[, .N, .(x=date)] else NULL
         }
         
         if (nrow(data) > 0) {
             
+            if (time_values$compare == F) {
+            
             data %>%
-                plot_ly(textfont = list(family = "GT America"),
-                        hovertemplate = paste0('%{y:,} stops ', link, 
+                    plot_ly(hovertemplate = paste0('%{y:,} stops ', link, 
                                                ' %{x|', date_format, "}<extra></extra>"),
                         line = list(color = '#3c3532')) %>% 
                 add_lines(x=~x, y=~N)%>%
@@ -324,6 +391,31 @@ function(input, output, session) {
                            y = 1, yref="paper",
                            text = "<i>Click and drag to zoom in on a specific date range</i>"
                        )))
+        } else {
+                
+                name1 <- get_legend_name(time_values$town, time_values$agency, 
+                                         time_values$officer)
+                name2 <- get_legend_name(time_values$town2, time_values$agency2, 
+                                         time_values$officer2)
+                
+                plot_ly(hovertemplate = paste0('%{y:,} stops ', link, 
+                                               ' %{x|', date_format, "}<extra></extra>")) %>% 
+                    add_lines(data=data, x=~x, y=~N, name=name1, opacity=.7,
+                              line = list(color = '#3c3532'))%>%
+                    add_lines(data=data2, x=~x, y=~N,name=name2, opacity=.7,
+                              line = list(color = "#ef404d")) %>%
+                    add_annotations(showarrow = F, opacity = 0.7,
+                                    x = .5, xref="paper", xanchor = "center",
+                                    y = 1, yref="paper",
+                                    text = "<i>Click and drag to zoom in on a specific date range</i>") %>%
+                    layout(yaxis = list(title = "Number of traffic stops", zeroline = F),
+                           xaxis = list(title = "", zeroline = F),
+                           font=list(family = "GT America"),
+                           hoverlabel=list(font = list(family = "GT America")),
+                           legend = list(x = 0.5, y=-.4,
+                                         xanchor="center",
+                                         bgcolor = alpha('lightgray', 0.4)))
+            }
         } else {
             plot_ly() %>%
                 layout(yaxis = list(zeroline = F, showticklabels = F),
