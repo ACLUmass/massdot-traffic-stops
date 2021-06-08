@@ -9,6 +9,12 @@ library(shinyjs)
 all_agencies <- readRDS("data/all_agencies.RDS")
 all_towns <- readRDS("data/all_towns.rds")
 
+all_outcomes <- c("All outcomes"="All outcomes", 
+                  "Warning"="Warn", 
+                  "Civil Citation"="Civil",
+                  "Criminal Citation"="Criminal", 
+                  "Arrest"="Arrest")
+
 log_tooltip_html <- "
 <div id='log-tooltip' width=20px>
     <b>What is a logarithmic scale?</b>
@@ -179,7 +185,7 @@ fluidPage(
                            ),
                            
                            # Stops over time ------------------------------------------
-                           tabPanel("Stops over time", 
+                           tabPanel("Compare stops over time", 
                                     wellPanel(id="internal_well",
                                               em("Select a town, agency, or officer to show all stops over time:"),
                                       splitLayout(
@@ -188,7 +194,9 @@ fluidPage(
                                                        label="Agency/Department", c("All agencies", all_agencies)),
                                         selectizeInput("time_officer", 
                                                        label="Officer ID", 
-                                                       c("Loading, please wait..." = ""))),
+                                                       c("Loading, please wait..." = "")),
+                                        selectizeInput("time_outcome", 
+                                                       label="Outcome", choices= all_outcomes)),
                                       checkboxInput("compare_time", label="Select a second town, agency, or officer to compare?", value=F),
                                       conditionalPanel(
                                         condition = "input.compare_time == true",
@@ -198,7 +206,9 @@ fluidPage(
                                                          label="Agency/Department", c("All agencies", all_agencies)),
                                           selectizeInput("time_officer2", 
                                                          label="Officer ID", 
-                                                         c("Loading, please wait..." = "")))),
+                                                         c("Loading, please wait..." = "")),
+                                          selectizeInput("time_outcome2", 
+                                                         label="Outcome", choices= all_outcomes))),
                                     actionButton("time_button", "Go")),
                                     radioButtons("time_type", "Plot by", choices=c("Year", "Month", "Day"), selected="Month", inline=T),#style="text-align: center;"),
                                     withSpinner(plotlyOutput("stops_v_time"), type=4, color="#b5b5b5", size=0.5)

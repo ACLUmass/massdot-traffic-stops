@@ -218,7 +218,7 @@ h4 {
   display: block;
 }
 
-div[data-value="Stops over time"] label span {
+div[data-value="Compare stops over time"] label span {
   font-style: italic;
 }
 
