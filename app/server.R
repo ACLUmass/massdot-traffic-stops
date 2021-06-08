@@ -278,24 +278,37 @@ function(input, output, session) {
     
     time_values <- reactiveValues(town = NULL)
     
-    get_legend_name <- function(loc, agency, officer) {
+    get_unit <- function(type) {
+        case_when(
+            type == "All outcomes" ~ "Stops", 
+            type == "Warn" ~ "Warnings",
+            type == "Arrest" ~ "Arrests",
+            type == "Crim" ~ "Criminal Citations",
+            type == "Civil" ~ "Civil Citations"
+        )
+    }
+    
+    get_legend_name <- function(loc, agency, officer, type) {
+        
+        unit <- get_unit(type)
+        
         if (officer != "All officers" & 
             officer != "") {
             if (loc == "All cities and towns") {
-                name <- paste("Stops by Officer", officer, "of the", agency) 
+                name <- paste(unit, "by Officer", officer, "of the", agency) 
             } else {
-                name <- paste("Stops by Officer", officer, "of the", agency, "in", loc) 
+                name <- paste(unit, "by Officer", officer, "of the", agency, "in", loc) 
             }
         } else if (agency != "All agencies") {
             if (loc != "All cities and towns") {
-                name <- paste("Stops by the", agency, "in", loc)
+                name <- paste(unit, "by the", agency, "in", loc)
             } else {
-                name <- paste("Stops by the", agency)
+                name <- paste(unit, "by the", agency)
             }
         } else if (loc != "All cities and towns") {
-            name <- paste("Stops in", loc)
+            name <- paste(unit, "in", loc)
         } else {
-            name <- "All stops"
+            name <- paste("All", unit)
         }
         
         return(name)
@@ -305,12 +318,14 @@ function(input, output, session) {
         time_values$town <- input$time_town
         time_values$agency <- input$time_agency
         time_values$officer <- input$time_officer
+        time_values$outcome <- input$time_outcome
         
         time_values$compare <- input$compare_time
         
         time_values$town2 <- input$time_town2
         time_values$agency2 <- input$time_agency2
         time_values$officer2 <- input$time_officer2
+        time_values$outcome2 <- input$time_outcome2
         
         cat(time_values$town, time_values$agency, time_values$officer, "\n")
         cat("recalculating data...\n")
@@ -321,7 +336,9 @@ function(input, output, session) {
                 agency == time_values$agency else T==T) &
             (if (time_values$officer != "All officers" & 
                 time_values$officer != "")
-                officer == time_values$officer else T==T),
+                officer == time_values$officer else T==T) &
+            (if(time_values$outcome != "All outcomes") 
+                type == time_values$outcome else T==T),
             .(date, year = year(date), 
               month = floor_date(date, "month"))]
         
@@ -333,7 +350,9 @@ function(input, output, session) {
                         agency == time_values$agency2 else T==T) &
                     (if (time_values$officer2 != "All officers" & 
                          time_values$officer2 != "")
-                        officer == time_values$officer2 else T==T),
+                        officer == time_values$officer2 else T==T) &
+                    (if(time_values$outcome2 != "All outcomes") 
+                        type == time_values$outcome2 else T==T),
                 .(date, year = year(date), 
                   month = floor_date(date, "month"))]
         } else {
@@ -376,12 +395,14 @@ function(input, output, session) {
             
             if (time_values$compare == F) {
             
+                unit <- get_unit(time_values$outcome)
+            
             data %>%
-                    plot_ly(hovertemplate = paste0('%{y:,} stops ', link, 
+                    plot_ly(hovertemplate = paste0('%{y:,} ', unit, " ", link, 
                                                ' %{x|', date_format, "}<extra></extra>"),
                         line = list(color = '#3c3532')) %>% 
                 add_lines(x=~x, y=~N)%>%
-                layout(yaxis = list(title = "Number of traffic stops", zeroline = F),
+                    layout(yaxis = list(title = paste("Number of", unit), zeroline = F),
                        xaxis = list(title = "", zeroline = F),
                        font=list(family = "GT America"),
                        hoverlabel=list(font = list(family = "GT America")),
@@ -394,16 +415,22 @@ function(input, output, session) {
         } else {
                 
                 name1 <- get_legend_name(time_values$town, time_values$agency, 
-                                         time_values$officer)
+                                         time_values$officer, time_values$outcome)
                 name2 <- get_legend_name(time_values$town2, time_values$agency2, 
-                                         time_values$officer2)
+                                         time_values$officer2, time_values$outcome2)
                 
-                plot_ly(hovertemplate = paste0('%{y:,} stops ', link, 
-                                               ' %{x|', date_format, "}<extra></extra>")) %>% 
+                unit1 <- unit <- get_unit(time_values$outcome)
+                unit2 <- unit <- get_unit(time_values$outcome2)
+                
+                plot_ly() %>% 
                     add_lines(data=data, x=~x, y=~N, name=name1, opacity=.7,
-                              line = list(color = '#3c3532'))%>%
+                              line = list(color = '#3c3532'),
+                              hovertemplate = paste0('%{y:,} ', unit1, " ", link, 
+                                                     ' %{x|', date_format, "}<extra></extra>"))%>%
                     add_lines(data=data2, x=~x, y=~N,name=name2, opacity=.7,
-                              line = list(color = "#ef404d")) %>%
+                              line = list(color = "#ef404d"),
+                              hovertemplate = paste0('%{y:,} ', unit2, " ", link, 
+                                                     ' %{x|', date_format, "}<extra></extra>")) %>%
                     add_annotations(showarrow = F, opacity = 0.7,
                                     x = .5, xref="paper", xanchor = "center",
                                     y = 1, yref="paper",
