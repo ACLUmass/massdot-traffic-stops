@@ -25,6 +25,12 @@ log_tooltip_html <- "
 </div>
 "
 
+officer_tooltip_html <- "
+<div id='officer-id-tooltip' width=20px>
+    The format of officer identifiers varies widely between law enforcement agencies - some agencies just use numbers, some include letters, etc. The options presented here reflect the IDs exactly as reported by MassDOT. We anticipate some may be typos.
+</div>
+"
+
 # Initialization --------------------------------------------------------------
 
 # Set ggplot settings
@@ -140,9 +146,14 @@ fluidPage(
                                         selectizeInput("download_town", "Town/City", c("All cities and towns", all_towns)),
                                         selectizeInput("download_agency", 
                                                        label="Agency/Department", c("All agencies", all_agencies)),
+                                        div(id="custom_label_div",
+                                            tags$b("Officer ID"),
+                                            a(icon("info-circle"), id="officer_tooltip",
+                                              `data-toggle`="tooltip", title=officer_tooltip_html),
                                         selectizeInput("download_officer", 
-                                                       label="Officer ID", 
-                                                       c("Loading, please wait..." = ""))),
+                                                       label=NULL, 
+                                                       c("Loading, please wait..." = "")))
+                                        ),
                                       splitLayout(
                                         dateInput("download_start_date", "Start Date",
                                                   value = "2002-01-01", min="2002-01-01", max="2021-02-04"),
@@ -192,9 +203,15 @@ fluidPage(
                                         selectizeInput("time_town", "Town/City", c("All cities and towns", all_towns)),
                                         selectizeInput("time_agency", 
                                                        label="Agency/Department", c("All agencies", all_agencies)),
+                                        
+                                        div(id="custom_label_div",
+                                            tags$b("Officer ID"),
+                                            a(icon("info-circle"), id="officer_tooltip",
+                                              `data-toggle`="tooltip", title=officer_tooltip_html),
                                         selectizeInput("time_officer", 
-                                                       label="Officer ID", 
-                                                       c("Loading, please wait..." = "")),
+                                                           label=NULL, 
+                                                           c("Loading, please wait..." = ""))),
+                                        
                                         selectizeInput("time_outcome", 
                                                        label="Outcome", choices= all_outcomes)),
                                       checkboxInput("compare_time", label="Select a second town, agency, or officer to compare?", value=F),
@@ -204,9 +221,15 @@ fluidPage(
                                           selectizeInput("time_town2", "Town/City", c("All cities and towns", all_towns)),
                                           selectizeInput("time_agency2", 
                                                          label="Agency/Department", c("All agencies", all_agencies)),
+                                          
+                                          div(id="custom_label_div",
+                                              tags$b("Officer ID"),
+                                              a(icon("info-circle"), id="officer_tooltip",
+                                                `data-toggle`="tooltip", title=officer_tooltip_html),
                                           selectizeInput("time_officer2", 
-                                                         label="Officer ID", 
-                                                         c("Loading, please wait..." = "")),
+                                                             label=NULL, 
+                                                             c("Loading, please wait..." = ""))),
+                                          
                                           selectizeInput("time_outcome2", 
                                                          label="Outcome", choices= all_outcomes))),
                                     actionButton("time_button", "Go")),
@@ -221,9 +244,14 @@ fluidPage(
                                                 selectizeInput("offense_town", "Town/City", c("All cities and towns", all_towns)),
                                                 selectizeInput("offense_agency", 
                                                                label="Agency/Department", c("All agencies", all_agencies)),
+                                                div(id="custom_label_div",
+                                                    tags$b("Officer ID"),
+                                                    a(icon("info-circle"), id="officer_tooltip",
+                                                      `data-toggle`="tooltip", title=officer_tooltip_html),
                                                 selectizeInput("offense_officer", 
-                                                               label="Officer ID", 
-                                                               c("Loading, please wait..." = ""))),
+                                                                   label=NULL, 
+                                                                   c("Loading, please wait..." = "")))
+                                                ),
                                               
                                               splitLayout(
                                                 dateInput("offense_start_date", "Start Date",
@@ -292,9 +320,13 @@ fluidPage(
                                       splitLayout(
                                         selectizeInput("officer_agency", 
                                                        label="Agency/Department", all_agencies),
+                                        div(id="custom_label_div",
+                                            tags$b("Officer ID"),
+                                            a(icon("info-circle"), id="officer_tooltip",
+                                              `data-toggle`="tooltip", title=officer_tooltip_html),
                                         selectizeInput("officer_officer", 
-                                                       "Officer ID", 
-                                                       choices=c("Loading, please wait..." = ""))
+                                                           label=NULL, 
+                                                           c("Loading, please wait..." = "")))
                                         ),
                                       splitLayout(
                                         dateInput("officer_race_start_date", "Start Date",
