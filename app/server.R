@@ -14,7 +14,7 @@ function(input, output, session) {
     
     # Connect to sql database
     sqldb <- dbConnect(SQLite(), 
-                       dbname="data/statewide_2002_21_ed.sqlite")
+                       dbname="data/statewide_2002_21.sqlite")
     
     # Load other datasets
     officers_per_agency <- read_rds("data/sep/officers_per_agency.rds")
@@ -262,10 +262,10 @@ function(input, output, session) {
     get_unit <- function(type) {
         case_when(
             type == "All outcomes" ~ "Stops", 
-            type == "WARN" ~ "Warnings",
-            type == "ARREST" ~ "Arrests",
-            type == "CRIM" ~ "Criminal Citations",
-            type == "CIVIL" ~ "Civil Citations"
+            type == "Warn" ~ "Warnings",
+            type == "Arrest" ~ "Arrests",
+            type == "Crim" ~ "Criminal Citations",
+            type == "Civil" ~ "Civil Citations"
         )
     }
     
