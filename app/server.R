@@ -18,6 +18,7 @@ function(input, output, session) {
     
     # Load other datasets
     officers_per_agency <- read_rds("data/sep/officers_per_agency.rds")
+    mapping_df <- read_rds("data/sep/mapping.rds")
     ma_towns <- read_rds("data/ma_towns.rds")
     data_mass_race <- read_rds("data/mass_race.RDS") %>%
         rename(var = race) %>%
@@ -134,22 +135,10 @@ function(input, output, session) {
     stops_per_county <- reactiveValues(data=NULL)
     
     observeEvent(input$map_stops_button, {
-        cat("calculating stops per county in time frame\n")
-        cat("radio button: ", input$towns_radio, "\n")
         
-        stops_sf <- stops_df[date >= input$town_start_date &
+        stops_sf <- mapping_df[date >= input$town_start_date & 
                                  date <= input$town_end_date, 
-                             .N, loc] %>%
-            filter(!loc %in% c("New Hampshire", "Not Assigned", "Other")) %>%
-            mutate(loc = case_when(
-                loc == "Manchester" ~ "Manchester-By-The-Sea",
-                loc %in% c("Allston", "Brighton", "Charlestown", "Dorchester", 
-                           "E Boston", "Forest Hills", "Hyde Park", "Jamaica Plain", 
-                           "Mattapan", "Roslindale", "Roxbury", "S Boston", "W Roxbury") ~ "Boston",
-                T ~ loc
-            )) %>%
-            group_by(loc) %>%
-            summarize(N = sum(N)) %>%
+                               .(N=sum(N)), loc] %>%
             merge(ma_towns, by.y = "town", by.x = "loc", all=T) %>% 
             mutate(N= replace_na(N, 0)) %>% # Fill in 0s for towns with no stops
             select(-TOWN, town=loc) %>%
