@@ -303,7 +303,7 @@ fluidPage(
                                         selectizeInput("town_town", "Town/City", all_towns),
                                         selectizeInput("town_agency", 
                                                        label="Agency/Department",
-                                                       choices=c("Loading, please wait..." = ""))
+                                                       choices=c("All agencies", all_agencies))
                                       ),
                                       splitLayout(
                                         dateInput("town_race_start_date", "Start Date",

@@ -717,94 +717,85 @@ function(input, output, session) {
             h4("Most Common Traffic Violations"),
             tableOutput("townover_top_offenses")
         )
-    
-    # Town's stops by race ------------------------------------------------------------
-    
-    observeEvent(input$town_town, {
-        cat("filtering out town's agencies\n")
-        selected_agencies <- stops_df[loc == input$town_town, 
-                                      list(agency)] %>%
-            unique() %>% arrange(agency)
         
-        updateSelectizeInput(session, "town_agency",
-                             choices = c("All agencies", selected_agencies), server=T)
     })
-    
+
+    # Town's stops by race ------------------------------------------------------------
+
     town_values <- reactiveValues()
-    
+
     observeEvent(input$town_button, {
         town_values$town <- input$town_town
         town_values$agency <- input$town_agency
         town_values$start_date <- input$town_race_start_date
         town_values$end_date <- input$town_race_end_date
     })
-    
+
     output$town_demog <- renderPlotly({
         shinyjs::hide("town_race_legend")
-        
+
         validate(
             need(town_values$town, 'Please select a city or town.')
         )
-        
+
         shinyjs::show("town_race_legend")
+
+        title_suffix <- if (town_values$agency != "All agencies") 
+            paste("by", town_values$agency) else ""
         
-        cat("calculating town dataset\n")
-        
-        if (town_values$agency != "All agencies") {
-            cat("Filtering town for agency\n")
-            data_town <- stops_df[agency == town_values$agency]
-            title_suffix <- paste("by", town_values$agency)
-        } else {
-            data_town <- stops_df
-            title_suffix <- ""
-        }
-        
-        data_town <- data_town[loc == town_values$town & 
-                                   date >= town_values$start_date &
-                                   date <= town_values$end_date,
-                               .(n=.N), 
-                               .(var=race)] %>%
+        data_town <- tbl(sqldb, "statewide_2002_21") %>%
+            filter(loc == !!town_values$town,
+                   date >= !!as.numeric(date(town_values$start_date)),
+                   date <= !!as.numeric(date(town_values$end_date)),
+                   if(!!town_values$agency != "All agencies")
+                       agency == !!town_values$agency else T) %>%
+            count(race) %>%
+            collect() %>%
+            mutate(race = factor(race, 
+                                 levels = c("White", "Black", "Hispanic/Latinx", 
+                                            "Asian", "Middle Eastern", "Native American", 
+                                            "Unknown"))) %>%
+            rename(var=race) %>%
             arrange(var)
-        
+
         data_town_pop <- town_race_pop %>%
             filter(town == town_values$town) %>%
             select(n=pop, var = race) %>%
             arrange(var)
-        
+
         town_stop_colors <- colors[data_town$var]
         town_pop_colors <- colors[data_town_pop$var]
-        
+
         plot_ly(sort=F,
                 direction = "clockwise",
-                hovertemplate = '<i>Race</i>: %{label}<br><i>Number stopped</i>: %{value} (%{percent})<extra></extra>',
                 marker = list(line = list(color = 'lightgrey', width = 1)),
                 labels = ~var, values = ~n,
                 textposition = "inside"
                 ) %>%
-            add_pie(data = data_town, 
-                    name = paste("Stops in", town_values$town, "\n", title_suffix), 
+            add_pie(data = data_town,
+                    name = paste("Stops in", town_values$town, "\n", title_suffix),
                     domain = list(x = c(0, .5), y = c(0, 1)),
-                    marker = list(colors = town_stop_colors)) %>% 
+                    marker = list(colors = town_stop_colors),
+                    hovertemplate = '<i>Race</i>: %{label}<br><i>Number stopped</i>: %{value} (%{percent})<extra></extra>') %>%
             add_annotations(
                 x= 0.25, y= -.03, xanchor="center", yanchor="top", xref = "paper", yref = "paper",
-                text = paste("Stops in", town_values$town, "\n", title_suffix), 
+                text = paste("Stops in", town_values$town, "\n", title_suffix),
                 showarrow = F,
                 font = list(size=17)
             ) %>%
             add_pie(data = data_town_pop, name = paste(town_values$town, "Population\n(2018 estimate)"),
                     domain = list(x = c(.5, 1), y = c(.2, .8)),
-                    marker = list(colors = town_pop_colors)) %>%
+                    marker = list(colors = town_pop_colors),
+                    hovertemplate = '<i>Race</i>: %{label}<br><i>Population (2018 estimate)</i>: %{value} (%{percent})<extra></extra>') %>%
             add_annotations(
                 x= 0.75, y= .15, xanchor="center",yanchor="top", xref = "paper", yref = "paper",
                 text = paste(town_values$town, "Population\n(2018 estimate)"), showarrow = F
             ) %>%
             layout(xaxis = list(showgrid = FALSE, zeroline = FALSE, showticklabels = FALSE),
                    yaxis = list(showgrid = FALSE, zeroline = FALSE, showticklabels = FALSE),
-                   showlegend = FALSE, 
+                   showlegend = FALSE,
                    font=list(family = "GT America"),
                    hoverlabel=list(font = list(family = "GT America")))
-        
-    })
     
     # Officer's stops by race ---------------------------------------------------------
     
