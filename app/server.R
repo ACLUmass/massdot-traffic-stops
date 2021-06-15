@@ -12,6 +12,8 @@ library(sf)
 function(input, output, session) {
     
     
+    # Load other datasets
+    officers_per_agency <- read_rds("data/sep/officers_per_agency.rds")
     ma_towns <- read_rds("data/ma_towns.rds")
     data_mass_race <- read_rds("data/mass_race.RDS") %>%
         rename(var = race) %>%
@@ -50,9 +52,8 @@ function(input, output, session) {
                                  choices = c("Please select agency"=""), server=T)
         } else {
             
-            selected_officers <- stops_df[agency == input$download_agency, 
-                                          list(officer)][order(officer), officer] %>%
-                unique()
+            selected_officers <- officers_per_agency[agency == input$download_agency, 
+                                                     list(officer)]
     
             updateSelectizeInput(session, "download_officer",
                                  choices = c("All officers", selected_officers), server=T)
@@ -238,9 +239,8 @@ function(input, output, session) {
     
     observeEvent(input$time_agency, {
         if (input$time_agency != "All agencies") {
-            selected_officers <- stops_df[agency == input$time_agency, 
-                                          list(officer)][order(officer), officer] %>%
-                unique()
+            selected_officers <- officers_per_agency[agency == input$time_agency, 
+                                                     list(officer)]
             
             updateSelectizeInput(session, "time_officer",
                                  choices = c("All officers", selected_officers), server=T)
@@ -252,9 +252,8 @@ function(input, output, session) {
     
     observeEvent(input$time_agency2, {
         if (!input$time_agency2 %in% c("All agencies", "--")) {
-            selected_officers <- stops_df[agency == input$time_agency2, 
-                                          list(officer)][order(officer), officer] %>%
-                unique()
+            selected_officers <- officers_per_agency[agency == input$time_agency2, 
+                                                     list(officer)]
             
             updateSelectizeInput(session, "time_officer2",
                                  choices = c("All officers", selected_officers), server=T)
@@ -455,9 +454,8 @@ function(input, output, session) {
     observeEvent(input$offense_agency, {
         
         if (input$offense_agency != "All agencies") {
-            selected_officers <- stops_df[agency == input$offense_agency, 
-                                          list(officer)][order(officer), officer] %>%
-                unique()
+            selected_officers <- officers_per_agency[agency == input$offense_agency, 
+                                                     list(officer)]
             
             updateSelectizeInput(session, "offense_officer",
                                  choices = c("All officers", selected_officers), server=T)
@@ -780,9 +778,8 @@ function(input, output, session) {
     
     observeEvent(input$officer_agency, {
         cat("filtering out agency's officers\n")
-        selected_officers <- stops_df[agency == input$officer_agency, 
-                                      list(officer)][order(officer), officer] %>%
-            unique()
+        selected_officers <- officers_per_agency[agency == input$officer_agency, 
+                                                 list(officer)]
 
         updateSelectizeInput(session, "officer_officer",
                              choices = selected_officers, server=T)
