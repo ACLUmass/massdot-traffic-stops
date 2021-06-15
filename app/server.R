@@ -796,70 +796,78 @@ function(input, output, session) {
                    showlegend = FALSE,
                    font=list(family = "GT America"),
                    hoverlabel=list(font = list(family = "GT America")))
-    
-    # Officer's stops by race ---------------------------------------------------------
-    
-    observeEvent(input$officer_agency, {
-        cat("filtering out agency's officers\n")
-        selected_officers <- officers_per_agency[agency == input$officer_agency, 
-                                                 list(officer)]
 
-        updateSelectizeInput(session, "officer_officer",
-                             choices = selected_officers, server=T)
     })
-    
+
+    # Officer's stops by race ---------------------------------------------------------
+
+    observeEvent(input$officer_agency, {
+        selected_officers <- officers_per_agency[agency == input$officer_agency,
+                                                 list(officer)]
+        
+        updateSelectizeInput(session, "officer_officer",
+                             choices = c(selected_officers), server=T)
+    })
+
     officer_values <- reactiveValues()
-    
+
     observeEvent(input$officer_button, {
         officer_values$officer <- input$officer_officer
         officer_values$agency <- input$officer_agency
         officer_values$start_date <- input$officer_race_start_date
         officer_values$end_date <- input$officer_race_end_date
     })
-    
+
     output$officer_demog <- renderPlotly({
         shinyjs::hide("officer_race_legend")
-        
+
         validate(
             need(officer_values$officer, 'Please select an officer ID.')
         )
-        
+
         shinyjs::show("officer_race_legend")
         
-        cat("calculating officer dataset\n")
-        data_officer <- stops_df[officer == officer_values$officer & 
-                                     agency == officer_values$agency  & 
-                                     date >= officer_values$start_date &
-                                     date <= officer_values$end_date,
-                                 .(n=.N), 
-                                 .(var=race)] %>%
+        data_officer <- tbl(sqldb, "statewide_2002_21") %>%
+            filter(agency == !!officer_values$agency,
+                   officer == !!officer_values$officer,
+                   date >= !!as.numeric(date(officer_values$start_date)),
+                   date <= !!as.numeric(date(officer_values$end_date))) %>%
+            count(race) %>%
+            collect() %>%
+            mutate(var = factor(race, 
+                                 levels = c("White", "Black", "Hispanic/Latinx", 
+                                            "Asian", "Middle Eastern", "Native American", 
+                                            "Unknown"))) %>%
             arrange(var)
         
-        cat("calculating agency dataset\n")
-        data_agency <- stops_df[agency == officer_values$agency, 
-                                .(n=.N), 
-                                .(var=race)] %>%
+        data_agency <- tbl(sqldb, "statewide_2002_21") %>%
+            filter(agency == !!officer_values$agency,
+                   date >= !!as.numeric(date(officer_values$start_date)),
+                   date <= !!as.numeric(date(officer_values$end_date))) %>%
+            count(race) %>%
+            collect() %>%
+            mutate(var = factor(race, 
+                                levels = c("White", "Black", "Hispanic/Latinx", 
+                                           "Asian", "Middle Eastern", "Native American", 
+                                           "Unknown"))) %>%
             arrange(var)
-        
+
         officer_colors <- colors[data_officer$var]
         agency_colors <- colors[data_agency$var]
-        
-        data_officer$var
-        
-        cat("generating plot\n")
+
         plot_ly(sort=F,
                 direction = "clockwise",
                 hovertemplate = '<i>Race</i>: %{label}<br><i>Number stopped</i>: %{value} (%{percent})<extra></extra>',
                 marker = list(line = list(color = 'lightgrey', width = 1)),
                 labels = ~var, values = ~n,
                 textposition = "inside") %>%
-            add_pie(data = data_officer, 
-                    name = paste("Officer", officer_values$officer), 
+            add_pie(data = data_officer,
+                    name = paste("Officer", officer_values$officer),
                     domain = list(x = c(.25, 0.75), y = c(0.3, 1)),
-                    marker = list(colors = officer_colors)) %>% 
+                    marker = list(colors = officer_colors)) %>%
             add_annotations(
                 x= 0.5, y= .2, xanchor="center", xref = "paper", yref = "paper",
-                text = paste("Officer", officer_values$officer), 
+                text = paste("Officer", officer_values$officer),
                 showarrow = F,
                 font = list(size=17)
             ) %>%
@@ -870,7 +878,7 @@ function(input, output, session) {
                 x= 0.15, y= -.07, xanchor="center", xref = "paper", yref = "paper",
                 text = paste(officer_values$agency, "Stops"), showarrow = F
             ) %>%
-            add_pie(data = data_mass_race, name = "All Massachusetts Stops", 
+            add_pie(data = data_mass_race, name = "All Massachusetts Stops",
                     domain = list(x = c(.7, 1), y = c(0, 0.4)),
                     marker = list(colors = colors)) %>%
             add_annotations(
@@ -879,11 +887,9 @@ function(input, output, session) {
             ) %>%
             layout(xaxis = list(showgrid = FALSE, zeroline = FALSE, showticklabels = FALSE),
                    yaxis = list(showgrid = FALSE, zeroline = FALSE, showticklabels = FALSE),
-                   showlegend = FALSE, 
+                   showlegend = FALSE,
                    font=list(family = "GT America"),
                    hoverlabel=list(font = list(family = "GT America")))
-    
+
         })
-
-
 }
