@@ -10,10 +10,10 @@ all_agencies <- readRDS("data/all_agencies.RDS")
 all_towns <- readRDS("data/all_towns.rds")
 
 all_outcomes <- c("All outcomes"="All outcomes", 
-                  "Warning"="Warn", 
-                  "Civil Citation"="Civil",
-                  "Criminal Citation"="Criminal", 
-                  "Arrest"="Arrest")
+                  "Warning"="WARN", 
+                  "Civil Citation"="CIVIL",
+                  "Criminal Citation"="CRIM", 
+                  "Arrest"="ARREST")
 
 log_tooltip_html <- "
 <div id='log-tooltip' width=20px>
