@@ -118,7 +118,7 @@ function(input, output, session) {
             
             enable("download_button")
         }
-    
+        
         object.size(download_values$data) %>% 
             format(units="auto", standard="SI") %>%
             paste("The dataset with the applied filters is estimated to be", .)
@@ -141,7 +141,7 @@ function(input, output, session) {
     observeEvent(input$map_stops_button, {
         
         stops_sf <- mapping_df[date >= input$town_start_date & 
-                                 date <= input$town_end_date, 
+                                   date <= input$town_end_date, 
                                .(N=sum(N)), loc] %>%
             merge(ma_towns, by.y = "town", by.x = "loc", all=T) %>% 
             mutate(N= replace_na(N, 0)) %>% # Fill in 0s for towns with no stops
@@ -298,6 +298,8 @@ function(input, output, session) {
     }
     
     observeEvent(input$time_button, {
+        cat("time type:", input$time_outcome, "\n")
+        
         time_values$town <- input$time_town
         time_values$agency <- input$time_agency
         time_values$officer <- input$time_officer
@@ -357,7 +359,7 @@ function(input, output, session) {
                     uncount(N) %>%
                     select(date, month, year)
                 
-        } else {
+            } else {
                 
                 time_values$data2 <- tbl(sqldb, "statewide_2002_21") %>%
                     filter(if(!!time_values$town2 != "All cities and towns")
@@ -375,8 +377,8 @@ function(input, output, session) {
                            year = lubridate::year(date),
                            month = lubridate::floor_date(date, "month")) %>%
                     as.data.table()
-        }
-        
+            }
+            
         } else {
             time_values$data2 <- NULL
         }
@@ -410,17 +412,17 @@ function(input, output, session) {
             data <- data[, .N, .(x=date)]
             data2 <- if (time_values$compare) data2[, .N, .(x=date)] else NULL
         }
-        
+            
         if (time_values$compare == F & nrow(data) > 0) {
             
-                unit <- get_unit(time_values$outcome)
-            
+            unit <- get_unit(time_values$outcome)
+        
             data %>%
-                    plot_ly(hovertemplate = paste0('%{y:,} ', unit, " ", link, 
+                plot_ly(hovertemplate = paste0('%{y:,} ', unit, " ", link, 
                                                ' %{x|', date_format, "}<extra></extra>"),
                         line = list(color = '#3c3532')) %>% 
                 add_lines(x=~x, y=~N)%>%
-                    layout(yaxis = list(title = paste("Number of", unit), zeroline = F),
+                layout(yaxis = list(title = paste("Number of", unit), zeroline = F),
                        xaxis = list(title = "", zeroline = F),
                        font=list(family = "GT America"),
                        hoverlabel=list(font = list(family = "GT America")),
@@ -431,35 +433,35 @@ function(input, output, session) {
                            text = "<i>Click and drag to zoom in on a specific date range</i>"
                        )))
         } else if (time_values$compare == T  & (nrow(data) > 0 | nrow(data2) > 0)) {
-                
-                name1 <- get_legend_name(time_values$town, time_values$agency, 
-                                         time_values$officer, time_values$outcome)
-                name2 <- get_legend_name(time_values$town2, time_values$agency2, 
-                                         time_values$officer2, time_values$outcome2)
-                
-                unit1 <- unit <- get_unit(time_values$outcome)
-                unit2 <- unit <- get_unit(time_values$outcome2)
-                
-                plot_ly() %>% 
-                    add_lines(data=data, x=~x, y=~N, name=name1, opacity=.7,
-                              line = list(color = '#3c3532'),
-                              hovertemplate = paste0('%{y:,} ', unit1, " ", link, 
-                                                     ' %{x|', date_format, "}<extra></extra>"))%>%
-                    add_lines(data=data2, x=~x, y=~N,name=name2, opacity=.7,
-                              line = list(color = "#ef404d"),
-                              hovertemplate = paste0('%{y:,} ', unit2, " ", link, 
-                                                     ' %{x|', date_format, "}<extra></extra>")) %>%
-                    add_annotations(showarrow = F, opacity = 0.7,
-                                    x = .5, xref="paper", xanchor = "center",
-                                    y = 1, yref="paper",
-                                    text = "<i>Click and drag to zoom in on a specific date range</i>") %>%
-                    layout(yaxis = list(title = "Number of traffic stops", zeroline = F),
-                           xaxis = list(title = "", zeroline = F),
-                           font=list(family = "GT America"),
-                           hoverlabel=list(font = list(family = "GT America")),
-                           legend = list(x = 0.5, y=-.4,
-                                         xanchor="center",
-                                         bgcolor = alpha('lightgray', 0.4)))
+            
+            name1 <- get_legend_name(time_values$town, time_values$agency, 
+                                     time_values$officer, time_values$outcome)
+            name2 <- get_legend_name(time_values$town2, time_values$agency2, 
+                                     time_values$officer2, time_values$outcome2)
+            
+            unit1 <- unit <- get_unit(time_values$outcome)
+            unit2 <- unit <- get_unit(time_values$outcome2)
+            
+            plot_ly() %>% 
+                add_lines(data=data, x=~x, y=~N, name=name1, opacity=.7,
+                          line = list(color = '#3c3532'),
+                          hovertemplate = paste0('%{y:,} ', unit1, " ", link, 
+                                                 ' %{x|', date_format, "}<extra></extra>"))%>%
+                add_lines(data=data2, x=~x, y=~N,name=name2, opacity=.7,
+                          line = list(color = "#ef404d"),
+                          hovertemplate = paste0('%{y:,} ', unit2, " ", link, 
+                                                 ' %{x|', date_format, "}<extra></extra>")) %>%
+                add_annotations(showarrow = F, opacity = 0.7,
+                                x = .5, xref="paper", xanchor = "center",
+                                y = 1, yref="paper",
+                                text = "<i>Click and drag to zoom in on a specific date range</i>") %>%
+                layout(yaxis = list(title = "Number of traffic stops", zeroline = F),
+                       xaxis = list(title = "", zeroline = F),
+                       font=list(family = "GT America"),
+                       hoverlabel=list(font = list(family = "GT America")),
+                       legend = list(x = 0.5, y=-.4,
+                                     xanchor="center",
+                                     bgcolor = alpha('lightgray', 0.4)))
         } else {
             plot_ly() %>%
                 layout(yaxis = list(zeroline = F, showticklabels = F),
@@ -751,11 +753,10 @@ function(input, output, session) {
                        agency == !!town_values$agency else T) %>%
             count(race) %>%
             collect() %>%
-            mutate(race = factor(race, 
+            mutate(var = factor(race, 
                                  levels = c("White", "Black", "Hispanic/Latinx", 
                                             "Asian", "Middle Eastern", "Native American", 
                                             "Unknown"))) %>%
-            rename(var=race) %>%
             arrange(var)
 
         data_town_pop <- town_race_pop %>%

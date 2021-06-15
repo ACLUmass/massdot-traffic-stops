@@ -328,7 +328,7 @@ fluidPage(
                                               `data-toggle`="tooltip", title=officer_tooltip_html),
                                             selectizeInput("officer_officer", 
                                                            label=NULL, 
-                                                           c("Loading, please wait..." = "")))
+                                                           choices=c("Loading, please wait..." = "")))
                                         ),
                                       splitLayout(
                                         dateInput("officer_race_start_date", "Start Date",
