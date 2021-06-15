@@ -50,7 +50,7 @@ fluidPage(
               tags$link(rel = "shortcut icon", href = "favicon.ico"),
               tags$link(rel = "icon", type = "image/png", sizes = "512x512", href = "favicon.png")
           ),
-          
+  
           # Add javascript for log tooltip
           tags$script(HTML('
                $( document ).on("shiny:sessioninitialized", function(event) {
@@ -87,16 +87,27 @@ fluidPage(
                                  em("This dashboard's underlying dataset consists of over 200 million cells across 11.8 million traffic stops. Please have patience as certain pages may take a few seconds to load.")
                                )
                            ),
-                                    h3("About the Data"),
                            
-                                    h4("Where did the data come from?"),
-                                    "The data displayed here are the result of a", 
-                                    a(href="https://data.aclum.org/wp-content/uploads/2021/05/2021_01_21-ACLUM-Public-Records-Request-MassDOT-MUC-Data.pdf",
-                                      "public records request"),
-                                    "with MassDOT filed by the",
-                                      a(href="https://www.aclum.org",
-                                        target="_blank",
-                                        "ACLU of Massachusetts."),
+                           div(id="dev-wait",
+                               wellPanel(
+                                 icon('exclamation-triangle'),
+                                 h4("Disclaimer"),
+                                 em("Based on discussions with MassDOT, ACLUM understands that MassDOT’s historical record of traffic stops can change due to updates in reporting requirements, corrections of records, delays by municipalities in reporting their warnings and citations, and other factors. See", 
+                                    a(href="X", "[SHOULD COVER IN BLOG POST]."), 
+                                    "Therefore, the record of traffic stops presented here reflects only the MassDOT database as it was on February 4, 2021.",)
+                               )
+                           ),
+                           
+                           h3("About the Data"),
+                           
+                           h4("Where did the data come from?"),
+                           "The data displayed here are the result of a", 
+                            a(href="https://data.aclum.org/wp-content/uploads/2021/05/2021_01_21-ACLUM-Public-Records-Request-MassDOT-MUC-Data.pdf",
+                              "public records request"),
+                           "with MassDOT filed by the",
+                           a(href="https://www.aclum.org",
+                             target="_blank",
+                             "ACLU of Massachusetts."), 
                                     
                                     br(),br(),
                                     h4("What's included?"),
@@ -120,16 +131,7 @@ fluidPage(
                                     
                                     "The data sourced for all visualizations on this site are available for download",
                                       actionLink("link_to_download", "here."),
-                                    
-                           div(id="dev-wait",
-                               wellPanel(
-                                 icon('exclamation-triangle'),
-                                 h4("Disclaimer"),
-                                 em("Based on discussions with MassDOT, ACLUM understands that MassDOT’s historical record of traffic stops can change due to updates in reporting requirements, corrections of records to reflect successful challenges of issued citations, delays by municipalities in reporting their warnings and citations, and other factors. See", 
-                                    a(href="X", "[SHOULD COVER IN BLOG POST]."), 
-                                    "Therefore, the record of traffic stops presented here reflects only the MassDOT database as it was on February 4, 2021.",)
-                               )
-                           ),
+                           
                                     
                                     h3("Source Code"),
                                     p("Interested programmers can view the source code for this app, written in R, on",
@@ -150,7 +152,7 @@ fluidPage(
                                             tags$b("Officer ID"),
                                             a(icon("info-circle"), id="officer_tooltip",
                                               `data-toggle`="tooltip", title=officer_tooltip_html),
-                                        selectizeInput("download_officer", 
+                                            selectizeInput("download_officer", 
                                                        label=NULL, 
                                                        c("Loading, please wait..." = "")))
                                         ),
@@ -170,7 +172,7 @@ fluidPage(
                                     ),
                            
                            "Explore the Data:",
-                           # Stops by town --------------------------------------------
+                           # Mapping stops --------------------------------------------
                            tabPanel("Mapping Stops", 
                                     wellPanel(id="internal_well",
                                       splitLayout(
@@ -208,7 +210,7 @@ fluidPage(
                                             tags$b("Officer ID"),
                                             a(icon("info-circle"), id="officer_tooltip",
                                               `data-toggle`="tooltip", title=officer_tooltip_html),
-                                        selectizeInput("time_officer", 
+                                            selectizeInput("time_officer", 
                                                            label=NULL, 
                                                            c("Loading, please wait..." = ""))),
                                         
@@ -226,7 +228,7 @@ fluidPage(
                                               tags$b("Officer ID"),
                                               a(icon("info-circle"), id="officer_tooltip",
                                                 `data-toggle`="tooltip", title=officer_tooltip_html),
-                                          selectizeInput("time_officer2", 
+                                              selectizeInput("time_officer2", 
                                                              label=NULL, 
                                                              c("Loading, please wait..." = ""))),
                                           
@@ -248,7 +250,7 @@ fluidPage(
                                                     tags$b("Officer ID"),
                                                     a(icon("info-circle"), id="officer_tooltip",
                                                       `data-toggle`="tooltip", title=officer_tooltip_html),
-                                                selectizeInput("offense_officer", 
+                                                    selectizeInput("offense_officer", 
                                                                    label=NULL, 
                                                                    c("Loading, please wait..." = "")))
                                                 ),
@@ -324,7 +326,7 @@ fluidPage(
                                             tags$b("Officer ID"),
                                             a(icon("info-circle"), id="officer_tooltip",
                                               `data-toggle`="tooltip", title=officer_tooltip_html),
-                                        selectizeInput("officer_officer", 
+                                            selectizeInput("officer_officer", 
                                                            label=NULL, 
                                                            c("Loading, please wait..." = "")))
                                         ),

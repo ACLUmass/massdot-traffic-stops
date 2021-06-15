@@ -136,7 +136,7 @@ function(input, output, session) {
         }
     )
     
-    # Stops by town -------------------------------------------------------------------
+    # Mapping stops -------------------------------------------------------------------
     
     stops_per_county <- reactiveValues(data=NULL)
     
@@ -248,7 +248,6 @@ function(input, output, session) {
     # Stops over time -----------------------------------------------------------------
     
     observeEvent(input$time_agency, {
-        cat("filtering out agency's officers\n")
         if (input$time_agency != "All agencies") {
             selected_officers <- stops_df[agency == input$time_agency, 
                                           list(officer)][order(officer), officer] %>%
@@ -515,7 +514,6 @@ function(input, output, session) {
         
         data %>%
             plot_ly(sort=F,direction = "clockwise",
-                    textfont = list(family = "GT America"),
                     hovertemplate = '<i>Offense</i>: %{label}<br><i>Number stopped</i>: %{value} (%{percent})<extra></extra>',
                     marker = list(line = list(color = 'lightgrey', width = 1),#)%>%#,
                                   colors = offense_colors)) %>%
@@ -759,7 +757,6 @@ function(input, output, session) {
         
         plot_ly(sort=F,
                 direction = "clockwise",
-                textfont = list(family = "GT America"),
                 hovertemplate = '<i>Race</i>: %{label}<br><i>Number stopped</i>: %{value} (%{percent})<extra></extra>',
                 marker = list(line = list(color = 'lightgrey', width = 1)),
                 labels = ~var, values = ~n,
@@ -843,7 +840,6 @@ function(input, output, session) {
         cat("generating plot\n")
         plot_ly(sort=F,
                 direction = "clockwise",
-                textfont = list(family = "GT America"),
                 hovertemplate = '<i>Race</i>: %{label}<br><i>Number stopped</i>: %{value} (%{percent})<extra></extra>',
                 marker = list(line = list(color = 'lightgrey', width = 1)),
                 labels = ~var, values = ~n,
