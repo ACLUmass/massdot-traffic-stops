@@ -20,6 +20,8 @@ function(input, output, session) {
     officers_per_agency <- read_rds("data/sep/officers_per_agency.rds")
     mapping_df <- read_rds("data/sep/mapping.rds")
     ma_towns <- read_rds("data/ma_towns.rds")
+    all_loc_agency_v_time <- fread("data/sep/all_loc_agency_stops_v_time.csv")  %>%
+        mutate_at(vars(date, month), as_date)
     data_mass_race <- read_rds("data/mass_race.RDS") %>%
         rename(var = race) %>%
         arrange(var)
@@ -260,10 +262,10 @@ function(input, output, session) {
     get_unit <- function(type) {
         case_when(
             type == "All outcomes" ~ "Stops", 
-            type == "Warn" ~ "Warnings",
-            type == "Arrest" ~ "Arrests",
-            type == "Crim" ~ "Criminal Citations",
-            type == "Civil" ~ "Civil Citations"
+            type == "WARN" ~ "Warnings",
+            type == "ARREST" ~ "Arrests",
+            type == "CRIM" ~ "Criminal Citations",
+            type == "CIVIL" ~ "Civil Citations"
         )
     }
     
@@ -308,37 +310,74 @@ function(input, output, session) {
         
         cat(time_values$town, time_values$agency, time_values$officer, "\n")
         cat("recalculating data...\n")
-        time_values$data <- stops_df[
-            (if(time_values$town != "All cities and towns") 
-                loc == time_values$town else T==T) &
-            (if(time_values$agency != "All agencies") 
-                agency == time_values$agency else T==T) &
-            (if (time_values$officer != "All officers" & 
-                time_values$officer != "")
-                officer == time_values$officer else T==T) &
-            (if(time_values$outcome != "All outcomes") 
-                type == time_values$outcome else T==T),
-            .(date, year = year(date), 
-              month = floor_date(date, "month"))]
+        
+        if (time_values$town == "All cities and towns" & 
+            time_values$agency == "All agencies") {
+            
+            cat("Calculating for all cities, towns, and agencies\n")
+            
+            time_values$data <- all_loc_agency_v_time %>%
+                filter(if(time_values$outcome != "All outcomes") 
+                        type == time_values$outcome else T) %>%
+                uncount(N) %>%
+                select(date, month, year)
+            
+            cat("Done calculating all!\n")
+            
+        } else {
+            
+            time_values$data <- tbl(sqldb, "statewide_2002_21") %>%
+                filter(if(!!time_values$town != "All cities and towns")
+                           loc == !!time_values$town else T,
+                       if(!!time_values$agency != "All agencies")
+                           agency == !!time_values$agency else T,
+                       if (!!time_values$officer != "All officers" &
+                           !!time_values$officer != "")
+                           officer == !!time_values$officer else T,
+                       if(!!time_values$outcome != "All outcomes") 
+                           type == !!time_values$outcome else T) %>%
+                select(date) %>%
+                collect() %>%
+                mutate(date = lubridate::as_date(date),
+                       year = lubridate::year(date),
+                       month = lubridate::floor_date(date, "month")) %>%
+                as.data.table()
+        }
         
         if (time_values$compare) {
-            time_values$data2 <- stops_df[
-                (if(time_values$town2 != "All cities and towns") 
-                    loc == time_values$town2 else T==T) &
-                    (if(time_values$agency2 != "All agencies") 
-                        agency == time_values$agency2 else T==T) &
-                    (if (time_values$officer2 != "All officers" & 
-                         time_values$officer2 != "")
-                        officer == time_values$officer2 else T==T) &
-                    (if(time_values$outcome2 != "All outcomes") 
-                        type == time_values$outcome2 else T==T),
-                .(date, year = year(date), 
-                  month = floor_date(date, "month"))]
+            
+            if (time_values$town2 == "All cities and towns" & 
+                time_values$agency2 == "All agencies") {
+                
+                time_values$data2 <- all_loc_agency_v_time %>%
+                    filter(if(time_values$outcome2 != "All outcomes") 
+                        type == time_values$outcome2 else T) %>%
+                    uncount(N) %>%
+                    select(date, month, year)
+                
+        } else {
+                
+                time_values$data2 <- tbl(sqldb, "statewide_2002_21") %>%
+                    filter(if(!!time_values$town2 != "All cities and towns")
+                        loc == !!time_values$town2 else T,
+                        if(!!time_values$agency2 != "All agencies")
+                            agency == !!time_values$agency2 else T,
+                        if (!!time_values$officer2 != "All officers" &
+                            !!time_values$officer2 != "")
+                            officer == !!time_values$officer2 else T,
+                        if(!!time_values$outcome2 != "All outcomes") 
+                            type == !!time_values$outcome2 else T) %>%
+                    select(date) %>%
+                    collect() %>%
+                    mutate(date = lubridate::as_date(date),
+                           year = lubridate::year(date),
+                           month = lubridate::floor_date(date, "month")) %>%
+                    as.data.table()
+        }
+        
         } else {
             time_values$data2 <- NULL
         }
-        
-        # View(time_values$data)
     })
     
     output$stops_v_time <- renderPlotly({
@@ -370,9 +409,7 @@ function(input, output, session) {
             data2 <- if (time_values$compare) data2[, .N, .(x=date)] else NULL
         }
         
-        if (nrow(data) > 0) {
-            
-            if (time_values$compare == F) {
+        if (time_values$compare == F & nrow(data) > 0) {
             
                 unit <- get_unit(time_values$outcome)
             
@@ -391,7 +428,7 @@ function(input, output, session) {
                            y = 1, yref="paper",
                            text = "<i>Click and drag to zoom in on a specific date range</i>"
                        )))
-        } else {
+        } else if (time_values$compare == T  & (nrow(data) > 0 | nrow(data2) > 0)) {
                 
                 name1 <- get_legend_name(time_values$town, time_values$agency, 
                                          time_values$officer, time_values$outcome)
@@ -421,7 +458,6 @@ function(input, output, session) {
                            legend = list(x = 0.5, y=-.4,
                                          xanchor="center",
                                          bgcolor = alpha('lightgray', 0.4)))
-            }
         } else {
             plot_ly() %>%
                 layout(yaxis = list(zeroline = F, showticklabels = F),
