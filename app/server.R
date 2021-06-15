@@ -553,81 +553,76 @@ function(input, output, session) {
                    hoverlabel=list(font = list(family = "GT America")),
                    legend = list(itemclick=F, itemdoubleclick=F))
         
-        
     })
     
     # Agency stats ------------------------------------------------------------
-    
-    # Stops made per officer
-    
-    agency_values <- reactiveValues(done = NULL)
-    
+
+    agency_values <- reactiveValues(agency = NULL)
+
     observeEvent(input$agency_button, {
-        # Direct input
         agency_values$agency <- input$agency_agency
         agency_values$start_date <- input$agency_start_date
         agency_values$end_date <- input$agency_end_date
+    })
+
+    output$top_towns <- renderTable({agency_values$top_towns})
+
+    output$agency_dashboard <- renderUI({
+        validate(
+            need(agency_values$agency, 'Please select filters and press "Go."')
+        )
+        
+        agency_data <- tbl(sqldb, "statewide_2002_21") %>%
+            filter(date >= !!as.numeric(as_date(agency_values$start_date)),
+                   date <= !!as.numeric(as_date(agency_values$end_date)),
+                   agency == !!agency_values$agency) %>%
+            select(loc, officer, offense) %>%
+            collect()
         
         # Calculate total stops
-        agency_values$total_stops <- stops_df[agency == agency_values$agency & 
-                                                  date >= agency_values$start_date &
-                                                  date <= agency_values$end_date, .N]
+        agency_values$total_stops <- agency_data %>%
+            count(name="N") %>%
+            pull(1)
         
         # Top towns
-        agency_values$top_towns <- stops_df[agency == agency_values$agency & 
-                         date >= agency_values$start_date &
-                         date <= agency_values$end_date, .N, loc] %>%
-                slice_max(N, n=10) %>%
-                mutate(Rank = min_rank(-N),
-                       N = number(N, big.mark=",", accuracy=1)) %>%
-                head(10) %>%
-                select(Rank, `Town/City`=loc, `Number of Stops`=N)
+        agency_values$top_towns <- agency_data %>%
+            count(loc, name="N") %>%
+            slice_max(N, n=10) %>%
+            mutate(Rank = min_rank(-N),
+                   N = number(N, big.mark=",", accuracy=1)) %>%
+            head(10) %>%
+            select(Rank, `Town/City`=loc, `Number of Stops`=N)
         
         # Top officers
-        output$top_officers <- renderTable({ 
+        output$top_officers <- renderTable({
             
-            stops_df[agency == agency_values$agency & 
-                         date >= agency_values$start_date &
-                         date <= agency_values$end_date, .N, officer] %>%
+            agency_data %>%
                 filter(!is.na(officer)) %>%
+                count(officer, name="N") %>%
                 slice_max(N, n=10) %>%
                 mutate(Rank = min_rank(-N),
                        N = number(N, big.mark=",", accuracy=1)) %>%
                 head(10) %>%
                 select(Rank, `Officer ID` = officer, `Number of Stops`=N)
-            })  
+        })
         
-        agency_values$done <- T
-        
-    })
-    
-    output$top_towns <- renderTable({agency_values$top_towns})
-    
-    output$agency_dashboard <- renderUI({
-        validate(
-            need(agency_values$done, 'Please select filters and press "Go."')
-        )
-        
-        # (this calculation lives in here to prevent early load)
-        top_offenses <- offenses_df[which(offenses_df$citation %in% 
-                              stops_df[agency == agency_values$agency & 
-                                           date >= agency_values$start_date &
-                                           date <= agency_values$end_date, citation]), 
-                    .N, offense] %>%
-            slice_max(N, n=10) %>%
-            separate(offense, into=c(NA, "desc"), sep=": ") %>%
-            separate(desc, into = c("Offense", "Statute"), sep= " \\* | (?=c)") %>%
-            mutate(N = number(N, big.mark=",", accuracy=1)) %>%
-            rename(`Number of Stops` = N)
-        
-        output$top_offenses <- renderTable({top_offenses})
-        
-        
+        # Top offenses
+        output$top_offenses <- renderTable({
+            
+            agency_data %>%
+                count(offense, name="N") %>%
+                slice_max(N, n=10) %>%
+                separate(offense, into = c("Offense", "Statute"), sep= " \\* | (?=c)") %>%
+                mutate(N = number(N, big.mark=",", accuracy=1)) %>%
+                rename(`Number of Stops` = N)
+
+        })
+
         tagList(
             h2(number(agency_values$total_stops, big.mark=","), style="text-align: center;"),
-            p(em("Stops made by", agency_values$agency, br(), "between", 
-              format(agency_values$start_date, "%b %d, %Y"), "and", 
-              format(agency_values$end_date, "%b %d, %Y")), 
+            p(em("Stops made by", agency_values$agency, br(), "between",
+              format(agency_values$start_date, "%b %d, %Y"), "and",
+              format(agency_values$end_date, "%b %d, %Y")),
               style="text-align: center;"),
             splitLayout(id="dashboard_split",
                 div(h4("Top Cities & Towns"),
