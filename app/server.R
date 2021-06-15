@@ -22,6 +22,8 @@ function(input, output, session) {
     ma_towns <- read_rds("data/ma_towns.rds")
     all_loc_agency_v_time <- fread("data/sep/all_loc_agency_stops_v_time.csv")  %>%
         mutate_at(vars(date, month), as_date)
+    all_offenses <- fread("data/sep/all_offenses_by_date.csv")  %>%
+        mutate(date = as_date(date))
     data_mass_race <- read_rds("data/mass_race.RDS") %>%
         rename(var = race) %>%
         arrange(var)
@@ -508,31 +510,41 @@ function(input, output, session) {
             need(offense_values$town, 'Please select filters and press "Go."')
         )
         
-        data <- offenses_df[
-            which(offenses_df$citation %in% 
-                      stops_df[date >= offense_values$start_date &
-                                   date <= offense_values$end_date &
-                                   (if(offense_values$town != "All cities and towns")
-                                       loc == offense_values$town else T==T) &
-                                   (if(offense_values$agency != "All agencies")
-                                       agency == offense_values$agency else T==T) &
-                                   (if (offense_values$officer != "All officers" &
-                                        offense_values$officer != "")
-                                       officer == offense_values$officer else T==T), citation]), 
-            list(offense)] %>%
-            merge(violations, by = "offense", all.x = T) %>%
-            mutate(group = ifelse(str_detect(group, "Boat|Child|Fuel|Toll|Snow|Freight"), "Other", group)) %>%
-            count(group) %>%
-            arrange(group == "Other", desc(n))
+        if (offense_values$town == "All cities and towns" &
+            offense_values$agency == "All agencies") {
+            
+            data <- all_offenses[date >= offense_values$start_date &
+                                     date <= offense_values$end_date] %>%
+                group_by(group) %>%
+                summarize(n = sum(n)) %>%
+                arrange(group == "Other", desc(n))
+            
+        } else {
+            
+            data <- tbl(sqldb, "statewide_2002_21") %>%
+                filter(date >= !!as.numeric(as_date(offense_values$start_date)),
+                       date <= !!as.numeric(as_date(offense_values$end_date)),
+                       if(!!offense_values$town != "All cities and towns")
+                           loc == !!offense_values$town else T,
+                       if(!!offense_values$agency != "All agencies")
+                           agency == !!offense_values$agency else T,
+                       if (!!offense_values$officer != "All officers" &
+                           !!offense_values$officer != "")
+                           officer == !!offense_values$officer else T) %>%
+                select(offense) %>%
+                collect() %>%
+                merge(violations, by="offense", all.x=T) %>%
+                count(group) %>%
+                arrange(group == "Other", desc(n))
+        }
         
         offense_colors <- named_colors[data$group]
         
         data %>%
             plot_ly(sort=F,direction = "clockwise",
                     hovertemplate = '<i>Offense</i>: %{label}<br><i>Number stopped</i>: %{value} (%{percent})<extra></extra>',
-                    marker = list(line = list(color = 'lightgrey', width = 1),#)%>%#,
+                    marker = list(line = list(color = 'lightgrey', width = 1),
                                   colors = offense_colors)) %>%
-            # config(modeBarButtonsToRemove = modeBarButtonsToRemove) %>%
             add_pie(labels=~group, values=~n,
                     textposition = "inside") %>%
             layout(xaxis = list(showgrid = FALSE, zeroline = FALSE, showticklabels = FALSE),
