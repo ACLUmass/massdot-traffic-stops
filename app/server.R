@@ -8,9 +8,13 @@ library(lubridate)
 library(scales)
 library(shinyjs)
 library(sf)
+library(RSQLite)
 
 function(input, output, session) {
     
+    # Connect to sql database
+    sqldb <- dbConnect(SQLite(), 
+                       dbname="data/statewide_2002_21_ed.sqlite")
     
     # Load other datasets
     officers_per_agency <- read_rds("data/sep/officers_per_agency.rds")
@@ -94,23 +98,22 @@ function(input, output, session) {
             download_values$filtered <- T
             cat("applying data filters\n")
             
-            download_values$data <- stops_df[date >= download_values$start_date &
-                                                 date <= download_values$end_date &
-                                                 (if(download_values$town != "All cities and towns")
-                                                     loc == download_values$town else T==T) &
-                                                 (if(download_values$agency != "All agencies")
-                                                     agency == download_values$agency else T==T) &
-                                                 (if (download_values$officer != "All officers" &
-                                                      download_values$officer != "")
-                                                     officer == download_values$officer else T==T)] %>%
-                merge(offenses_df, by="citation", all.x=T, all.y=F)
+            download_values$data <- tbl(sqldb, "statewide_2002_21") %>%
+                filter(date >= !!as.numeric(date(download_values$start_date)),
+                       date <= !!as.numeric(date(download_values$end_date)),
+                       if(!!download_values$town != "All cities and towns")
+                           loc == !!download_values$town else T,
+                       if(!!download_values$agency != "All agencies")
+                           agency == !!download_values$agency else T,
+                       if (!!download_values$officer != "All officers" &
+                           !!download_values$officer != "")
+                           officer == !!download_values$officer else T) %>%
+                collect() %>%
+                mutate(date = as_date(date))
             
             enable("download_button")
         }
     
-        
-        cat("printing object size\n")
-        
         object.size(download_values$data) %>% 
             format(units="auto", standard="SI") %>%
             paste("The dataset with the applied filters is estimated to be", .)
