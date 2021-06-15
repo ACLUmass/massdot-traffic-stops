@@ -11,23 +11,18 @@ library(sf)
 
 function(input, output, session) {
     
-    # Create a Progress object
-    progress <- shiny::Progress$new()
-    on.exit(progress$close())
-    progress$set(message = "Loading data", value = 0.1, 
-                 detail = "Loading traffic stops.")
-        
-    # Load the cleaned data
-    stops_df <- read_fst("data/stops.fst", as.data.table=T)
-    progress$inc(.6, detail = "Loading offenses.")
-    offenses_df <- read_fst("data/offenses.fst", as.data.table=T)
     
+    ma_towns <- read_rds("data/ma_towns.rds")
     data_mass_race <- read_rds("data/mass_race.RDS") %>%
         rename(var = race) %>%
         arrange(var)
-    
-    ma_towns <- read_rds("data/ma_towns.rds")
     town_race_pop <- readRDS("data/towns_race.rds")
+    named_colors <- readRDS("data/offense_colors.rds")
+    violations <- read_csv("data/violations.csv",
+                           col_types = cols(
+                               offense = col_character(),
+                               group = col_character()
+                           ))
     
     colors <- c("White" = "#3c3532", 
                 "Black" = "#681b40", 
@@ -38,13 +33,7 @@ function(input, output, session) {
                 "Unknown" = "white",
                 "Other" = "white")
     
-    named_colors <- readRDS("data/offense_colors.rds")
     
-    violations <- read_csv("data/violations.csv",
-                           col_types = cols(
-                               offense = col_character(),
-                               group = col_character()
-                           ))
     
     # Download data subset ------------------------------------------------------------
     
