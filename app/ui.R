@@ -144,18 +144,18 @@ fluidPage(
                                               p("This page allows you to select a subset of the MassDOT data to download. If you required the entire 2.8 GB dataset, you can download a compressed version from Google Drive", 
                                                 a("here.", href="https://drive.google.com/file/d/1enQXDsXV7bVtrjiUteQ7g04vL1o-Sv7e/view?usp=sharing"), 
                                                 style="font-style: italic; text-align: center; font-weight: 100;"),
-                                      splitLayout(
-                                        selectizeInput("download_town", "Town/City", c("All cities and towns", all_towns)),
-                                        selectizeInput("download_agency", 
-                                                       label="Agency/Department", c("All agencies", all_agencies)),
-                                        div(id="custom_label_div",
+                                      fluidRow(
+                                        column(4, selectizeInput("download_town", "Town/City", c("All cities and towns", all_towns))),
+                                        column(4, selectizeInput("download_agency", 
+                                                       label="Agency/Department", c("All agencies", all_agencies))),
+                                        column(4, div(id="custom_label_div",
                                             tags$b("Officer ID"),
                                             a(icon("info-circle"), id="officer_tooltip",
                                               `data-toggle`="tooltip", title=officer_tooltip_html),
                                             selectizeInput("download_officer", 
                                                        label=NULL, 
                                                        c("Loading, please wait..." = "")))
-                                        ),
+                                        )),
                                       splitLayout(
                                         dateInput("download_start_date", "Start Date",
                                                   value = "2002-01-01", min="2002-01-01", max="2021-02-04"),
@@ -189,9 +189,14 @@ fluidPage(
                                                      selected="Total stops", inline=F),
                                         div(id="town_log_span",
                                             div(tags$b("Numeric Scale")),
-                                             checkboxInput("town_log", "Plot logarithmic scale", value=T),
-                                             a(icon("info-circle"), id="log_tooltip",
-                                                        `data-toggle`="tooltip", title=log_tooltip_html))),
+                                             checkboxInput("town_log", 
+                                                           span("Plot logarithmic scale", 
+                                                                a(icon("info-circle"), 
+                                                                  id="log_tooltip",
+                                                                  `data-toggle`="tooltip", 
+                                                                  title=log_tooltip_html)), 
+                                                           value=T)
+                                             )),
                                       actionButton("map_stops_button", "Go")),
                                     withSpinner(leafletOutput("stops_by_town"), type=4, color="#b5b5b5", size=0.5)
                                     
@@ -201,12 +206,12 @@ fluidPage(
                            tabPanel("Compare stops over time", 
                                     wellPanel(id="internal_well",
                                               em("Select a town, agency, or officer to show all stops over time:"),
-                                      splitLayout(
-                                        selectizeInput("time_town", "Town/City", c("All cities and towns", all_towns)),
+                                      fluidRow(
+                                        column(6, splitLayout(selectizeInput("time_town", "Town/City", c("All cities and towns", all_towns)),
                                         selectizeInput("time_agency", 
-                                                       label="Agency/Department", c("All agencies", all_agencies)),
+                                                       label="Agency / Department", c("All agencies", all_agencies)))),
                                         
-                                        div(id="custom_label_div",
+                                        column(6, splitLayout(div(id="custom_label_div",
                                             tags$b("Officer ID"),
                                             a(icon("info-circle"), id="officer_tooltip",
                                               `data-toggle`="tooltip", title=officer_tooltip_html),
@@ -215,16 +220,16 @@ fluidPage(
                                                            c("Loading, please wait..." = ""))),
                                         
                                         selectizeInput("time_outcome", 
-                                                       label="Outcome", choices= all_outcomes)),
+                                                       label="Outcome", choices= all_outcomes)))),
                                       checkboxInput("compare_time", label="Select a second town, agency, or officer to compare?", value=F),
                                       conditionalPanel(
                                         condition = "input.compare_time == true",
-                                        splitLayout(
-                                          selectizeInput("time_town2", "Town/City", c("All cities and towns", all_towns)),
+                                        fluidRow(
+                                          column(6, splitLayout(selectizeInput("time_town2", "Town/City", c("All cities and towns", all_towns)),
                                           selectizeInput("time_agency2", 
-                                                         label="Agency/Department", c("All agencies", all_agencies)),
+                                                         label="Agency / Department", c("All agencies", all_agencies)))),
                                           
-                                          div(id="custom_label_div",
+                                          column(6, splitLayout(div(id="custom_label_div",
                                               tags$b("Officer ID"),
                                               a(icon("info-circle"), id="officer_tooltip",
                                                 `data-toggle`="tooltip", title=officer_tooltip_html),
@@ -233,7 +238,7 @@ fluidPage(
                                                              c("Loading, please wait..." = ""))),
                                           
                                           selectizeInput("time_outcome2", 
-                                                         label="Outcome", choices= all_outcomes))),
+                                                         label="Outcome", choices= all_outcomes))))),
                                     actionButton("time_button", "Go")),
                                     radioButtons("time_type", "Plot by", choices=c("Year", "Month", "Day"), selected="Month", inline=T),#style="text-align: center;"),
                                     withSpinner(plotlyOutput("stops_v_time"), type=4, color="#b5b5b5", size=0.5)
@@ -242,17 +247,17 @@ fluidPage(
                            # Stops by offense ------------------------------------------
                            tabPanel("Stops by offense", 
                                     wellPanel(id="internal_well",
-                                              splitLayout(
-                                                selectizeInput("offense_town", "Town/City", c("All cities and towns", all_towns)),
-                                                selectizeInput("offense_agency", 
-                                                               label="Agency/Department", c("All agencies", all_agencies)),
-                                                div(id="custom_label_div",
+                                              fluidRow(
+                                                column(4, selectizeInput("offense_town", "Town/City", c("All cities and towns", all_towns))),
+                                                column(4, selectizeInput("offense_agency", 
+                                                               label="Agency/Department", c("All agencies", all_agencies))),
+                                                column(4, div(id="custom_label_div",
                                                     tags$b("Officer ID"),
                                                     a(icon("info-circle"), id="officer_tooltip",
                                                       `data-toggle`="tooltip", title=officer_tooltip_html),
                                                     selectizeInput("offense_officer", 
                                                                    label=NULL, 
-                                                                   c("Loading, please wait..." = "")))
+                                                                   c("Loading, please wait..." = ""))))
                                                 ),
                                               
                                               splitLayout(
@@ -321,7 +326,7 @@ fluidPage(
                                     wellPanel(id="internal_well",
                                       splitLayout(
                                         selectizeInput("officer_agency", 
-                                                       label="Agency/Department", all_agencies),
+                                                       label="Agency / Department", all_agencies),
                                         div(id="custom_label_div",
                                             tags$b("Officer ID"),
                                             a(icon("info-circle"), id="officer_tooltip",
