@@ -73,6 +73,21 @@ body {
   top: 10px;
 }
 
+label {
+  white-space: normal;
+}
+
+#internal_well .row {
+    margin-left: inherit;
+    margin-right: inherit;
+}
+
+#internal_well .col-sm-6,
+#internal_well .col-sm-4 {
+    padding-left: 2px;
+    padding-right: 2px;
+}
+
 .tabbable {
   max-width: 750px;
 }
