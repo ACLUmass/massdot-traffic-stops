@@ -44,7 +44,21 @@ function(input, output, session) {
                 "Unknown" = "white",
                 "Other" = "white")
     
-    
+    empty_plotly <- function(label) {
+        plot_ly() %>%
+            layout(yaxis = list(zeroline = F, showticklabels = F),
+                   xaxis = list(zeroline = F, showticklabels = F),
+                   font=list(family = "GT America"),
+                   hoverlabel=list(font = list(family = "GT America")),
+                   annotations = list(list(
+                       showarrow = F,
+                       x = .5, xref="paper", xanchor = "center",
+                       y = .5, yref="paper", yanchor = "center",
+                       text = paste("<i>No", label, "for selected filters.</i>"),
+                       opacity = 0.7
+                   ))
+            )
+    }
     
     # Download data subset ------------------------------------------------------------
     
@@ -115,6 +129,11 @@ function(input, output, session) {
                            officer == !!download_values$officer else T) %>%
                 collect() %>%
                 mutate(date = as_date(date))
+            
+            validate(
+                need(nrow(download_values$data) > 0, 
+                     "No data for selected filters. Please try a different selection.")
+            )
             
             enable("download_button")
         }
@@ -259,7 +278,7 @@ function(input, output, session) {
         }
     })
     
-    time_values <- reactiveValues(town = NULL)
+    time_values <- reactiveValues(agency = NULL)
     
     get_unit <- function(type) {
         case_when(
@@ -385,8 +404,9 @@ function(input, output, session) {
     })
     
     output$stops_v_time <- renderPlotly({
+        
         validate(
-            need(time_values$town, 'Please select filters and press "Go."')
+            need(time_values$agency, 'Please select filters and press "Go."')
         )
         
         data <- time_values$data
@@ -432,50 +452,41 @@ function(input, output, session) {
                            y = 1, yref="paper",
                            text = "<i>Click and drag to zoom in on a specific date range</i>"
                        )))
-        } else if (time_values$compare == T  & (nrow(data) > 0 | nrow(data2) > 0)) {
+        } else if (time_values$compare == T) {
+            if (nrow(data) > 0 | nrow(data2) > 0) {
             
-            name1 <- get_legend_name(time_values$town, time_values$agency, 
-                                     time_values$officer, time_values$outcome)
-            name2 <- get_legend_name(time_values$town2, time_values$agency2, 
-                                     time_values$officer2, time_values$outcome2)
-            
-            unit1 <- unit <- get_unit(time_values$outcome)
-            unit2 <- unit <- get_unit(time_values$outcome2)
-            
-            plot_ly() %>% 
-                add_lines(data=data, x=~x, y=~N, name=name1, opacity=.7,
-                          line = list(color = '#3c3532'),
-                          hovertemplate = paste0('%{y:,} ', unit1, " ", link, 
-                                                 ' %{x|', date_format, "}<extra></extra>"))%>%
-                add_lines(data=data2, x=~x, y=~N,name=name2, opacity=.7,
-                          line = list(color = "#ef404d"),
-                          hovertemplate = paste0('%{y:,} ', unit2, " ", link, 
-                                                 ' %{x|', date_format, "}<extra></extra>")) %>%
-                add_annotations(showarrow = F, opacity = 0.7,
-                                x = .5, xref="paper", xanchor = "center",
-                                y = 1, yref="paper",
-                                text = "<i>Click and drag to zoom in on a specific date range</i>") %>%
-                layout(yaxis = list(title = "Number of traffic stops", zeroline = F),
-                       xaxis = list(title = "", zeroline = F),
-                       font=list(family = "GT America"),
-                       hoverlabel=list(font = list(family = "GT America")),
-                       legend = list(x = 0.5, y=-.4,
-                                     xanchor="center",
-                                     bgcolor = alpha('lightgray', 0.4)))
+                name1 <- get_legend_name(time_values$town, time_values$agency, 
+                                         time_values$officer, time_values$outcome)
+                name2 <- get_legend_name(time_values$town2, time_values$agency2, 
+                                         time_values$officer2, time_values$outcome2)
+                
+                unit1 <- unit <- get_unit(time_values$outcome)
+                unit2 <- unit <- get_unit(time_values$outcome2)
+                
+                plot_ly() %>% 
+                    add_lines(data=data, x=~x, y=~N, name=name1, opacity=.7,
+                              line = list(color = '#3c3532'),
+                              hovertemplate = paste0('%{y:,} ', unit1, " ", link, 
+                                                     ' %{x|', date_format, "}<extra></extra>"))%>%
+                    add_lines(data=data2, x=~x, y=~N,name=name2, opacity=.7,
+                              line = list(color = "#ef404d"),
+                              hovertemplate = paste0('%{y:,} ', unit2, " ", link, 
+                                                     ' %{x|', date_format, "}<extra></extra>")) %>%
+                    add_annotations(showarrow = F, opacity = 0.7,
+                                    x = .5, xref="paper", xanchor = "center",
+                                    y = 1, yref="paper",
+                                    text = "<i>Click and drag to zoom in on a specific date range</i>") %>%
+                    layout(yaxis = list(title = "Number of traffic stops", zeroline = F),
+                           xaxis = list(title = "", zeroline = F),
+                           font=list(family = "GT America"),
+                           hoverlabel=list(font = list(family = "GT America")),
+                           legend = list(x = 0.5, y=-.4,
+                                         xanchor="center",
+                                         bgcolor = alpha('lightgray', 0.4)))
+            }
         } else {
-            plot_ly() %>%
-                layout(yaxis = list(zeroline = F, showticklabels = F),
-                       xaxis = list(zeroline = F, showticklabels = F),
-                       font=list(family = "GT America"),
-                       hoverlabel=list(font = list(family = "GT America")),
-                       annotations = list(list(
-                           showarrow = F,
-                           x = .5, xref="paper", xanchor = "center",
-                           y = .5, yref="paper", yanchor = "center",
-                           text = "<i>No stops for selected filters.</i>",
-                           opacity = 0.7
-                       ))
-                )
+            # If there are no stops for the filter
+            empty_plotly("stops")
         }
         
     })
@@ -542,18 +553,23 @@ function(input, output, session) {
         
         offense_colors <- named_colors[data$group]
         
-        data %>%
-            plot_ly(sort=F,direction = "clockwise",
-                    hovertemplate = '<i>Offense</i>: %{label}<br><i>Number stopped</i>: %{value} (%{percent})<extra></extra>',
-                    marker = list(line = list(color = 'lightgrey', width = 1),
-                                  colors = offense_colors)) %>%
-            add_pie(labels=~group, values=~n,
-                    textposition = "inside") %>%
-            layout(xaxis = list(showgrid = FALSE, zeroline = FALSE, showticklabels = FALSE),
-                   yaxis = list(showgrid = FALSE, zeroline = FALSE, showticklabels = FALSE),
-                   font=list(family = "GT America"),
-                   hoverlabel=list(font = list(family = "GT America")),
-                   legend = list(itemclick=F, itemdoubleclick=F))
+        if (nrow(data) > 0) {
+        
+            data %>%
+                plot_ly(sort=F,direction = "clockwise",
+                        hovertemplate = '<i>Offense</i>: %{label}<br><i>Number stopped</i>: %{value} (%{percent})<extra></extra>',
+                        marker = list(line = list(color = 'lightgrey', width = 1),
+                                      colors = offense_colors)) %>%
+                add_pie(labels=~group, values=~n,
+                        textposition = "inside") %>%
+                layout(xaxis = list(showgrid = FALSE, zeroline = FALSE, showticklabels = FALSE),
+                       yaxis = list(showgrid = FALSE, zeroline = FALSE, showticklabels = FALSE),
+                       font=list(family = "GT America"),
+                       hoverlabel=list(font = list(family = "GT America")),
+                       legend = list(itemclick=F, itemdoubleclick=F))
+        } else  {
+            empty_plotly("stops")
+        }
         
     })
     
@@ -739,11 +755,6 @@ function(input, output, session) {
         validate(
             need(town_values$town, 'Please select a city or town.')
         )
-
-        shinyjs::show("town_race_legend")
-
-        title_suffix <- if (town_values$agency != "All agencies") 
-            paste("by", town_values$agency) else ""
         
         data_town <- tbl(sqldb, "statewide_2002_21") %>%
             filter(loc == !!town_values$town,
@@ -758,45 +769,55 @@ function(input, output, session) {
                                             "Asian", "Middle Eastern", "Native American", 
                                             "Unknown"))) %>%
             arrange(var)
+        
+        if (nrow(data_town) > 0) {
+            
+            shinyjs::show("town_race_legend")
+            
+            title_suffix <- if (town_values$agency != "All agencies") 
+                paste("by", town_values$agency) else ""
 
-        data_town_pop <- town_race_pop %>%
-            filter(town == town_values$town) %>%
-            select(n=pop, var = race) %>%
-            arrange(var)
-
-        town_stop_colors <- colors[data_town$var]
-        town_pop_colors <- colors[data_town_pop$var]
-
-        plot_ly(sort=F,
-                direction = "clockwise",
-                marker = list(line = list(color = 'lightgrey', width = 1)),
-                labels = ~var, values = ~n,
-                textposition = "inside"
+            data_town_pop <- town_race_pop %>%
+                filter(town == town_values$town) %>%
+                select(n=pop, var = race) %>%
+                arrange(var)
+    
+            town_stop_colors <- colors[data_town$var]
+            town_pop_colors <- colors[data_town_pop$var]
+    
+            plot_ly(sort=F,
+                    direction = "clockwise",
+                    marker = list(line = list(color = 'lightgrey', width = 1)),
+                    labels = ~var, values = ~n,
+                    textposition = "inside"
+                    ) %>%
+                add_pie(data = data_town,
+                        name = paste("Stops in", town_values$town, "\n", title_suffix),
+                        domain = list(x = c(0, .5), y = c(0, 1)),
+                        marker = list(colors = town_stop_colors),
+                        hovertemplate = '<i>Race</i>: %{label}<br><i>Number stopped</i>: %{value} (%{percent})<extra></extra>') %>%
+                add_annotations(
+                    x= 0.25, y= -.03, xanchor="center", yanchor="top", xref = "paper", yref = "paper",
+                    text = paste("Stops in", town_values$town, "\n", title_suffix),
+                    showarrow = F,
+                    font = list(size=17)
                 ) %>%
-            add_pie(data = data_town,
-                    name = paste("Stops in", town_values$town, "\n", title_suffix),
-                    domain = list(x = c(0, .5), y = c(0, 1)),
-                    marker = list(colors = town_stop_colors),
-                    hovertemplate = '<i>Race</i>: %{label}<br><i>Number stopped</i>: %{value} (%{percent})<extra></extra>') %>%
-            add_annotations(
-                x= 0.25, y= -.03, xanchor="center", yanchor="top", xref = "paper", yref = "paper",
-                text = paste("Stops in", town_values$town, "\n", title_suffix),
-                showarrow = F,
-                font = list(size=17)
-            ) %>%
-            add_pie(data = data_town_pop, name = paste(town_values$town, "Population\n(2018 estimate)"),
-                    domain = list(x = c(.5, 1), y = c(.2, .8)),
-                    marker = list(colors = town_pop_colors),
-                    hovertemplate = '<i>Race</i>: %{label}<br><i>Population (2018 estimate)</i>: %{value} (%{percent})<extra></extra>') %>%
-            add_annotations(
-                x= 0.75, y= .15, xanchor="center",yanchor="top", xref = "paper", yref = "paper",
-                text = paste(town_values$town, "Population\n(2018 estimate)"), showarrow = F
-            ) %>%
-            layout(xaxis = list(showgrid = FALSE, zeroline = FALSE, showticklabels = FALSE),
-                   yaxis = list(showgrid = FALSE, zeroline = FALSE, showticklabels = FALSE),
-                   showlegend = FALSE,
-                   font=list(family = "GT America"),
-                   hoverlabel=list(font = list(family = "GT America")))
+                add_pie(data = data_town_pop, name = paste(town_values$town, "Population\n(2018 estimate)"),
+                        domain = list(x = c(.5, 1), y = c(.2, .8)),
+                        marker = list(colors = town_pop_colors),
+                        hovertemplate = '<i>Race</i>: %{label}<br><i>Population (2018 estimate)</i>: %{value} (%{percent})<extra></extra>') %>%
+                add_annotations(
+                    x= 0.75, y= .15, xanchor="center",yanchor="top", xref = "paper", yref = "paper",
+                    text = paste(town_values$town, "Population\n(2018 estimate)"), showarrow = F
+                ) %>%
+                layout(xaxis = list(showgrid = FALSE, zeroline = FALSE, showticklabels = FALSE),
+                       yaxis = list(showgrid = FALSE, zeroline = FALSE, showticklabels = FALSE),
+                       showlegend = FALSE,
+                       font=list(family = "GT America"),
+                       hoverlabel=list(font = list(family = "GT America")))
+        } else {
+            empty_plotly("stops")
+        }
 
     })
 
@@ -825,8 +846,6 @@ function(input, output, session) {
         validate(
             need(officer_values$officer, 'Please select an officer ID.')
         )
-
-        shinyjs::show("officer_race_legend")
         
         data_officer <- tbl(sqldb, "statewide_2002_21") %>%
             filter(agency == !!officer_values$agency,
@@ -841,56 +860,64 @@ function(input, output, session) {
                                             "Unknown"))) %>%
             arrange(var)
         
-        data_agency <- tbl(sqldb, "statewide_2002_21") %>%
-            filter(agency == !!officer_values$agency,
-                   date >= !!as.numeric(date(officer_values$start_date)),
-                   date <= !!as.numeric(date(officer_values$end_date))) %>%
-            count(race) %>%
-            collect() %>%
-            mutate(var = factor(race, 
-                                levels = c("White", "Black", "Hispanic/Latinx", 
-                                           "Asian", "Middle Eastern", "Native American", 
-                                           "Unknown"))) %>%
-            arrange(var)
-
-        officer_colors <- colors[data_officer$var]
-        agency_colors <- colors[data_agency$var]
-
-        plot_ly(sort=F,
-                direction = "clockwise",
-                hovertemplate = '<i>Race</i>: %{label}<br><i>Number stopped</i>: %{value} (%{percent})<extra></extra>',
-                marker = list(line = list(color = 'lightgrey', width = 1)),
-                labels = ~var, values = ~n,
-                textposition = "inside") %>%
-            add_pie(data = data_officer,
-                    name = paste("Officer", officer_values$officer),
-                    domain = list(x = c(.25, 0.75), y = c(0.3, 1)),
-                    marker = list(colors = officer_colors)) %>%
-            add_annotations(
-                x= 0.5, y= .2, xanchor="center", xref = "paper", yref = "paper",
-                text = paste("Officer", officer_values$officer),
-                showarrow = F,
-                font = list(size=17)
-            ) %>%
-            add_pie(data = data_agency, name = paste(officer_values$agency, "Stops"),
-                    domain = list(x = c(0, .3), y = c(0, .4)),
-                    marker = list(colors = agency_colors)) %>%
-            add_annotations(
-                x= 0.15, y= -.07, xanchor="center", xref = "paper", yref = "paper",
-                text = paste(officer_values$agency, "Stops"), showarrow = F
-            ) %>%
-            add_pie(data = data_mass_race, name = "All Massachusetts Stops",
-                    domain = list(x = c(.7, 1), y = c(0, 0.4)),
-                    marker = list(colors = colors)) %>%
-            add_annotations(
-                x= 0.85, y= -.07, xanchor="center", xref = "paper", yref = "paper",
-                text = "All Massachusetts Stops", showarrow = F
-            ) %>%
-            layout(xaxis = list(showgrid = FALSE, zeroline = FALSE, showticklabels = FALSE),
-                   yaxis = list(showgrid = FALSE, zeroline = FALSE, showticklabels = FALSE),
-                   showlegend = FALSE,
-                   font=list(family = "GT America"),
-                   hoverlabel=list(font = list(family = "GT America")))
+        if (nrow(data_officer) > 0) {
+            
+            shinyjs::show("officer_race_legend")
+        
+            data_agency <- tbl(sqldb, "statewide_2002_21") %>%
+                filter(agency == !!officer_values$agency,
+                       date >= !!as.numeric(date(officer_values$start_date)),
+                       date <= !!as.numeric(date(officer_values$end_date))) %>%
+                count(race) %>%
+                collect() %>%
+                mutate(var = factor(race, 
+                                    levels = c("White", "Black", "Hispanic/Latinx", 
+                                               "Asian", "Middle Eastern", "Native American", 
+                                               "Unknown"))) %>%
+                arrange(var)
+    
+            officer_colors <- colors[data_officer$var]
+            agency_colors <- colors[data_agency$var]
+    
+            plot_ly(sort=F,
+                    direction = "clockwise",
+                    hovertemplate = '<i>Race</i>: %{label}<br><i>Number stopped</i>: %{value} (%{percent})<extra></extra>',
+                    marker = list(line = list(color = 'lightgrey', width = 1)),
+                    labels = ~var, values = ~n,
+                    textposition = "inside") %>%
+                add_pie(data = data_officer,
+                        name = paste("Officer", officer_values$officer),
+                        domain = list(x = c(.25, 0.75), y = c(0.3, 1)),
+                        marker = list(colors = officer_colors)) %>%
+                add_annotations(
+                    x= 0.5, y= .2, xanchor="center", xref = "paper", yref = "paper",
+                    text = paste("Officer", officer_values$officer),
+                    showarrow = F,
+                    font = list(size=17)
+                ) %>%
+                add_pie(data = data_agency, name = paste(officer_values$agency, "Stops"),
+                        domain = list(x = c(0, .3), y = c(0, .4)),
+                        marker = list(colors = agency_colors)) %>%
+                add_annotations(
+                    x= 0.15, y= -.07, xanchor="center", xref = "paper", yref = "paper",
+                    text = paste(officer_values$agency, "Stops"), showarrow = F
+                ) %>%
+                add_pie(data = data_mass_race, name = "All Massachusetts Stops",
+                        domain = list(x = c(.7, 1), y = c(0, 0.4)),
+                        marker = list(colors = colors)) %>%
+                add_annotations(
+                    x= 0.85, y= -.07, xanchor="center", xref = "paper", yref = "paper",
+                    text = "All Massachusetts Stops", showarrow = F
+                ) %>%
+                layout(xaxis = list(showgrid = FALSE, zeroline = FALSE, showticklabels = FALSE),
+                       yaxis = list(showgrid = FALSE, zeroline = FALSE, showticklabels = FALSE),
+                       showlegend = FALSE,
+                       font=list(family = "GT America"),
+                       hoverlabel=list(font = list(family = "GT America")))
+            
+        } else {
+            empty_plotly("stops")
+        }
 
         })
 }
