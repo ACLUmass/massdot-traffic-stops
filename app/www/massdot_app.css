@@ -64,6 +64,7 @@ body {
   height: 40px;
   display: inline;
   margin-left: 15px;
+  opacity: 30%;
 }
 
 #title_and_icon {
@@ -71,6 +72,26 @@ body {
   margin-left: 40px;
   position: relative;
   top: 10px;
+}
+
+@media only screen and (max-width: 600px) {
+  #title {
+    margin-left: -15%;
+    width: 140%;
+  }
+  
+  #title_and_icon {
+    margin-left: inherit;
+    text-align: center;
+  }
+  
+  #title h2 {
+    font-size: 2rem;
+    margin-top: 0px;
+    padding-top: 0px;
+    padding-left: 0px;
+    margin-left: -1.5rem;
+  }
 }
 
 label {
