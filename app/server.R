@@ -286,11 +286,12 @@ function(input, output, session) {
             type == "Warn" ~ "Warnings",
             type == "Arrest" ~ "Arrests",
             type == "Crim" ~ "Criminal Citations",
-            type == "Civil" ~ "Civil Citations"
+            type == "Civil" ~ "Civil Citations",
+            T ~ type
         )
     }
     
-    get_legend_name <- function(loc, agency, officer, type) {
+    get_legend_name <- function(loc, agency, officer, type, pie_label=F) {
         
         unit <- get_unit(type)
         
@@ -310,7 +311,14 @@ function(input, output, session) {
         } else if (loc != "All cities and towns") {
             name <- paste(unit, "in", loc)
         } else {
-            name <- paste("All", unit)
+            name <- unit
+        }
+        
+        if (pie_label) {
+            name <- name %>%
+                str_replace(" of the", "\nof the") %>%
+                str_replace(" by the", "\nby the") %>%
+                paste("<span style='font-size: 1.5rem; margin-bottom:3rem;'>", ., "\n </span>")
         }
         
         return(name)
@@ -554,6 +562,10 @@ function(input, output, session) {
         offense_colors <- named_colors[data$group]
         
         if (nrow(data) > 0) {
+            
+            annotation <- get_legend_name(offense_values$town, offense_values$agency, 
+                                          offense_values$officer, "Offenses from stops",
+                                          pie_label=T)
         
             data %>%
                 plot_ly(sort=F,direction = "clockwise",
@@ -561,12 +573,14 @@ function(input, output, session) {
                         marker = list(line = list(color = 'lightgrey', width = 1),
                                       colors = offense_colors)) %>%
                 add_pie(labels=~group, values=~n,
-                        textposition = "inside") %>%
+                        textposition = "inside",
+                        title = annotation) %>%
                 layout(xaxis = list(showgrid = FALSE, zeroline = FALSE, showticklabels = FALSE),
                        yaxis = list(showgrid = FALSE, zeroline = FALSE, showticklabels = FALSE),
                        font=list(family = "GT America"),
                        hoverlabel=list(font = list(family = "GT America")),
                        legend = list(itemclick=F, itemdoubleclick=F))
+            
         } else  {
             empty_plotly("stops")
         }
@@ -784,6 +798,11 @@ function(input, output, session) {
     
             town_stop_colors <- colors[data_town$var]
             town_pop_colors <- colors[data_town_pop$var]
+            
+            annotation <- get_legend_name(town_values$town, town_values$agency, 
+                                          "All officers", "Race of stops",
+                                          pie_label=T) %>%
+                str_replace(" in", "\nin")
     
             plot_ly(sort=F,
                     direction = "clockwise",
@@ -792,24 +811,16 @@ function(input, output, session) {
                     textposition = "inside"
                     ) %>%
                 add_pie(data = data_town,
-                        name = paste("Stops in", town_values$town, "\n", title_suffix),
+                        title = annotation,
                         domain = list(x = c(0, .5), y = c(0, 1)),
                         marker = list(colors = town_stop_colors),
                         hovertemplate = '<i>Race</i>: %{label}<br><i>Number stopped</i>: %{value} (%{percent})<extra></extra>') %>%
-                add_annotations(
-                    x= 0.25, y= -.03, xanchor="center", yanchor="top", xref = "paper", yref = "paper",
-                    text = paste("Stops in", town_values$town, "\n", title_suffix),
-                    showarrow = F,
-                    font = list(size=17)
-                ) %>%
-                add_pie(data = data_town_pop, name = paste(town_values$town, "Population\n(2018 estimate)"),
+                add_pie(data = data_town_pop, 
+                        title = paste("<span style='font-size:1.2rem'>", 
+                                      town_values$town, "Population\n(2018 estimate)\n </span>"),
                         domain = list(x = c(.5, 1), y = c(.2, .8)),
                         marker = list(colors = town_pop_colors),
                         hovertemplate = '<i>Race</i>: %{label}<br><i>Population (2018 estimate)</i>: %{value} (%{percent})<extra></extra>') %>%
-                add_annotations(
-                    x= 0.75, y= .15, xanchor="center",yanchor="top", xref = "paper", yref = "paper",
-                    text = paste(town_values$town, "Population\n(2018 estimate)"), showarrow = F
-                ) %>%
                 layout(xaxis = list(showgrid = FALSE, zeroline = FALSE, showticklabels = FALSE),
                        yaxis = list(showgrid = FALSE, zeroline = FALSE, showticklabels = FALSE),
                        showlegend = FALSE,
@@ -878,6 +889,13 @@ function(input, output, session) {
     
             officer_colors <- colors[data_officer$var]
             agency_colors <- colors[data_agency$var]
+            
+            officer_annotation <- get_legend_name("All cities and towns", officer_values$agency, 
+                                          officer_values$officer, "Stops",
+                                          pie_label=T) %>%
+                str_replace(" in", "\nin")
+            
+            outline_css <- "text-shadow: -1px -1px 0 #fff, 0 -1px 0 #fff, 1px -1px 0 #fff, 1px 0 0 #fff, 1px 1px 0 #fff, 0 1px 0 #fff, -1px 1px 0 #fff, -1px 0 0 #fff;"
     
             plot_ly(sort=F,
                     direction = "clockwise",
@@ -886,29 +904,21 @@ function(input, output, session) {
                     labels = ~var, values = ~n,
                     textposition = "inside") %>%
                 add_pie(data = data_officer,
-                        name = paste("Officer", officer_values$officer),
+                        title = officer_annotation,
                         domain = list(x = c(.25, 0.75), y = c(0.3, 1)),
                         marker = list(colors = officer_colors)) %>%
-                add_annotations(
-                    x= 0.5, y= .2, xanchor="center", xref = "paper", yref = "paper",
-                    text = paste("Officer", officer_values$officer),
-                    showarrow = F,
-                    font = list(size=17)
-                ) %>%
-                add_pie(data = data_agency, name = paste(officer_values$agency, "Stops"),
-                        domain = list(x = c(0, .3), y = c(0, .4)),
+                add_pie(data = data_agency, 
+                        title = paste0("<span style='font-size:1.2rem; ", outline_css,
+                                       "'>Stops by the\n",
+                                       officer_values$agency,
+                                       "</span>"),
+                        domain = list(x = c(0, .4), y = c(0, 0.5)),
                         marker = list(colors = agency_colors)) %>%
-                add_annotations(
-                    x= 0.15, y= -.07, xanchor="center", xref = "paper", yref = "paper",
-                    text = paste(officer_values$agency, "Stops"), showarrow = F
-                ) %>%
-                add_pie(data = data_mass_race, name = "All Massachusetts Stops",
-                        domain = list(x = c(.7, 1), y = c(0, 0.4)),
+                add_pie(data = data_mass_race, 
+                        title = paste0("<span style='font-size:1.2rem; ", outline_css, 
+                                       "'>All Massachusetts Stops\n </span>"),
+                        domain = list(x = c(.6, 1), y = c(0, 0.5)),
                         marker = list(colors = colors)) %>%
-                add_annotations(
-                    x= 0.85, y= -.07, xanchor="center", xref = "paper", yref = "paper",
-                    text = "All Massachusetts Stops", showarrow = F
-                ) %>%
                 layout(xaxis = list(showgrid = FALSE, zeroline = FALSE, showticklabels = FALSE),
                        yaxis = list(showgrid = FALSE, zeroline = FALSE, showticklabels = FALSE),
                        showlegend = FALSE,
