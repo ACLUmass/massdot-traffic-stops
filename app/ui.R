@@ -82,14 +82,6 @@ fluidPage(
                            
                            div(id="dev-wait",
                                wellPanel(
-                                 icon('hourglass-half'),
-                                 h4("Please be patient"),
-                                 em("This dashboard's underlying dataset consists of over 200 million cells across 11.8 million traffic stops. Please have patience as certain pages may take a few seconds to load.")
-                               )
-                           ),
-                           
-                           div(id="dev-wait",
-                               wellPanel(
                                  icon('exclamation-triangle'),
                                  h4("Disclaimer"),
                                  em("Based on discussions with MassDOT, ACLUM understands that MassDOT’s historical record of traffic stops can change due to updates in reporting requirements, corrections of records, delays by municipalities in reporting their warnings and citations, and other factors. See", 

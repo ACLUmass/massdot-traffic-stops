@@ -8,6 +8,7 @@ library(lubridate)
 library(scales)
 library(shinyjs)
 library(sf)
+library(DBI)
 library(RSQLite)
 
 function(input, output, session) {
@@ -58,6 +59,57 @@ function(input, output, session) {
                        opacity = 0.7
                    ))
             )
+    }
+    
+    build_query <- function(start_date="2002-01-01", 
+                            end_date="2021-02-04", 
+                            town="All cities and towns", 
+                            agency="All agencies", 
+                            officer="All officers", 
+                            outcome="All outcomes", col="*", group="") {
+        
+        query <- paste("SELECT", col, "FROM `statewide_2002_21` WHERE")
+        and_needed <- F
+        
+        if (start_date != "2002-01-01" | end_date != "2021-02-04") {
+            query <- paste0(query, " `date` BETWEEN ", as.numeric(as_date(start_date)), 
+                                " AND ", as.numeric(as_date(end_date)))
+            and_needed <- T
+        }
+        
+        if (town != "All cities and towns") {
+            
+            query <- paste0(query, ifelse(and_needed, " AND", ""), " `loc` = '", town, "'")
+            and_needed <- T
+        }
+        
+        if (agency != "All agencies") {
+            query <- paste0(query, ifelse(and_needed, " AND", ""), 
+                           " `agency` = '", agency, "'")
+            and_needed <- T
+            
+            if (officer != "All officers" & officer != "") {
+                query <- paste0(query, " AND `officer` = '", officer, "'")
+            }
+        }
+        
+        if (outcome != "All outcomes") {
+            
+            query <- paste0(query, ifelse(and_needed, " AND", ""), " `type` = '", 
+                            outcome, "'")
+        }
+        
+        if (str_ends(query, "WHERE")) {
+            cat("querying entire database?? wuh-oh\n")
+        }
+        
+        query <- paste(query, 
+                       ifelse(group=="", "", paste("GROUP BY", group)))
+        
+        cat(query, "\n")
+        
+        return(query)
+        
     }
     
     # Download data subset ------------------------------------------------------------
@@ -117,17 +169,14 @@ function(input, output, session) {
             download_values$filtered <- T
             cat("applying data filters\n")
             
-            download_values$data <- tbl(sqldb, "statewide_2002_21") %>%
-                filter(date >= !!as.numeric(date(download_values$start_date)),
-                       date <= !!as.numeric(date(download_values$end_date)),
-                       if(!!download_values$town != "All cities and towns")
-                           loc == !!download_values$town else T,
-                       if(!!download_values$agency != "All agencies")
-                           agency == !!download_values$agency else T,
-                       if (!!download_values$officer != "All officers" &
-                           !!download_values$officer != "")
-                           officer == !!download_values$officer else T) %>%
-                collect() %>%
+            q <- build_query(start_date = download_values$start_date, 
+                             end_date = download_values$end_date, 
+                             town = download_values$town, 
+                             agency = download_values$agency, 
+                             officer = download_values$officer)
+            
+            download_values$data <- 
+                dbGetQuery(sqldb, q) %>%
                 mutate(date = as_date(date))
             
             validate(
@@ -357,18 +406,14 @@ function(input, output, session) {
             
         } else {
             
-            time_values$data <- tbl(sqldb, "statewide_2002_21") %>%
-                filter(if(!!time_values$town != "All cities and towns")
-                           loc == !!time_values$town else T,
-                       if(!!time_values$agency != "All agencies")
-                           agency == !!time_values$agency else T,
-                       if (!!time_values$officer != "All officers" &
-                           !!time_values$officer != "")
-                           officer == !!time_values$officer else T,
-                       if(!!time_values$outcome != "All outcomes") 
-                           type == !!time_values$outcome else T) %>%
-                select(date) %>%
-                collect() %>%
+            q <- build_query(town = time_values$town, 
+                             agency = time_values$agency, 
+                             officer = time_values$officer, 
+                             outcome = time_values$outcome, 
+                             col = "date")
+            
+            time_values$data <-
+                dbGetQuery(sqldb, q) %>%
                 mutate(date = lubridate::as_date(date),
                        year = lubridate::year(date),
                        month = lubridate::floor_date(date, "month")) %>%
@@ -388,18 +433,13 @@ function(input, output, session) {
                 
             } else {
                 
-                time_values$data2 <- tbl(sqldb, "statewide_2002_21") %>%
-                    filter(if(!!time_values$town2 != "All cities and towns")
-                        loc == !!time_values$town2 else T,
-                        if(!!time_values$agency2 != "All agencies")
-                            agency == !!time_values$agency2 else T,
-                        if (!!time_values$officer2 != "All officers" &
-                            !!time_values$officer2 != "")
-                            officer == !!time_values$officer2 else T,
-                        if(!!time_values$outcome2 != "All outcomes") 
-                            type == !!time_values$outcome2 else T) %>%
-                    select(date) %>%
-                    collect() %>%
+                q <- build_query(town = time_values$town2, 
+                                 agency = time_values$agency2, 
+                                 officer = time_values$officer2, 
+                                 outcome = time_values$outcome2, 
+                                 col = "date")
+                
+                time_values$data2 <- dbGetQuery(sqldb, q) %>%
                     mutate(date = lubridate::as_date(date),
                            year = lubridate::year(date),
                            month = lubridate::floor_date(date, "month")) %>%
@@ -542,18 +582,14 @@ function(input, output, session) {
             
         } else {
             
-            data <- tbl(sqldb, "statewide_2002_21") %>%
-                filter(date >= !!as.numeric(as_date(offense_values$start_date)),
-                       date <= !!as.numeric(as_date(offense_values$end_date)),
-                       if(!!offense_values$town != "All cities and towns")
-                           loc == !!offense_values$town else T,
-                       if(!!offense_values$agency != "All agencies")
-                           agency == !!offense_values$agency else T,
-                       if (!!offense_values$officer != "All officers" &
-                           !!offense_values$officer != "")
-                           officer == !!offense_values$officer else T) %>%
-                select(offense) %>%
-                collect() %>%
+            q <- build_query(start_date = offense_values$start_date,
+                             end_date = offense_values$end_date,
+                             town = offense_values$town, 
+                             agency = offense_values$agency, 
+                             officer = offense_values$officer, 
+                             col = "offense")
+            
+            data <- dbGetQuery(sqldb, q) %>%
                 merge(violations, by="offense", all.x=T) %>%
                 count(group) %>%
                 arrange(group == "Other", desc(n))
@@ -604,12 +640,12 @@ function(input, output, session) {
             need(agency_values$agency, 'Please select filters and press "Go."')
         )
         
-        agency_data <- tbl(sqldb, "statewide_2002_21") %>%
-            filter(date >= !!as.numeric(as_date(agency_values$start_date)),
-                   date <= !!as.numeric(as_date(agency_values$end_date)),
-                   agency == !!agency_values$agency) %>%
-            select(loc, officer, offense) %>%
-            collect()
+        q <- build_query(start_date = agency_values$start_date,
+                         end_date = agency_values$end_date,
+                         agency = agency_values$agency, 
+                         col = "loc, officer, offense")
+        
+        agency_data <- dbGetQuery(sqldb, q)
         
         # Calculate total stops
         agency_values$total_stops <- agency_data %>%
@@ -682,12 +718,12 @@ function(input, output, session) {
             need(townover_values$town, 'Please select filters and press "Go."')
         )
         
-        town_data <- tbl(sqldb, "statewide_2002_21") %>%
-            filter(date >= !!as.numeric(as_date(townover_values$start_date)),
-                   date <= !!as.numeric(as_date(townover_values$end_date)),
-                   loc == !!townover_values$town) %>%
-            select(agency, officer, offense) %>%
-            collect()
+        q <- build_query(start_date = townover_values$start_date,
+                         end_date = townover_values$end_date,
+                         town = townover_values$town, 
+                         col = "agency, officer, offense")
+        
+        town_data <- dbGetQuery(sqldb, q)
         
         # Calculate total stops
         townover_values$total_stops <- town_data %>%
@@ -770,14 +806,14 @@ function(input, output, session) {
             need(town_values$town, 'Please select a city or town.')
         )
         
-        data_town <- tbl(sqldb, "statewide_2002_21") %>%
-            filter(loc == !!town_values$town,
-                   date >= !!as.numeric(date(town_values$start_date)),
-                   date <= !!as.numeric(date(town_values$end_date)),
-                   if(!!town_values$agency != "All agencies")
-                       agency == !!town_values$agency else T) %>%
+        q <- build_query(start_date = town_values$start_date,
+                         end_date = town_values$end_date,
+                         town = town_values$town, 
+                         agency = town_values$agency,
+                         col="race")
+        
+        data_town <- dbGetQuery(sqldb, q) %>%
             count(race) %>%
-            collect() %>%
             mutate(var = factor(race, 
                                  levels = c("White", "Black", "Hispanic/Latinx", 
                                             "Asian", "Middle Eastern", "Native American", 
@@ -858,13 +894,14 @@ function(input, output, session) {
             need(officer_values$officer, 'Please select an officer ID.')
         )
         
-        data_officer <- tbl(sqldb, "statewide_2002_21") %>%
-            filter(agency == !!officer_values$agency,
-                   officer == !!officer_values$officer,
-                   date >= !!as.numeric(date(officer_values$start_date)),
-                   date <= !!as.numeric(date(officer_values$end_date))) %>%
+        q <- build_query(start_date = officer_values$start_date,
+                         end_date = officer_values$end_date, 
+                         agency = officer_values$agency,
+                         officer = officer_values$officer,
+                         col = "race")
+        
+        data_officer <- dbGetQuery(sqldb, q) %>%
             count(race) %>%
-            collect() %>%
             mutate(var = factor(race, 
                                  levels = c("White", "Black", "Hispanic/Latinx", 
                                             "Asian", "Middle Eastern", "Native American", 
@@ -874,13 +911,14 @@ function(input, output, session) {
         if (nrow(data_officer) > 0) {
             
             shinyjs::show("officer_race_legend")
+            
+            q <- build_query(start_date = officer_values$start_date,
+                             end_date = officer_values$end_date, 
+                             agency = officer_values$agency,
+                             col = "race")
         
-            data_agency <- tbl(sqldb, "statewide_2002_21") %>%
-                filter(agency == !!officer_values$agency,
-                       date >= !!as.numeric(date(officer_values$start_date)),
-                       date <= !!as.numeric(date(officer_values$end_date))) %>%
+            data_agency <- dbGetQuery(sqldb, q) %>%
                 count(race) %>%
-                collect() %>%
                 mutate(var = factor(race, 
                                     levels = c("White", "Black", "Hispanic/Latinx", 
                                                "Asian", "Middle Eastern", "Native American", 
