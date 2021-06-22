@@ -10,12 +10,15 @@ library(shinyjs)
 library(sf)
 library(DBI)
 library(RSQLite)
+library(pool)
+
+# Connect to sql database using pool to manage connections
+sqldb <- dbPool(
+    drv = SQLite(),
+    dbname = "data/statewide_2002_21.sqlite"
+)
 
 function(input, output, session) {
-    
-    # Connect to sql database
-    sqldb <- dbConnect(SQLite(), 
-                       dbname="data/statewide_2002_21.sqlite")
     
     # Load other datasets
     officers_per_agency <- read_rds("data/sep/officers_per_agency.rds")
