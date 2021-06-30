@@ -413,7 +413,7 @@ function(input, output, session) {
                              agency = time_values$agency, 
                              officer = time_values$officer, 
                              outcome = time_values$outcome, 
-                             col = "date")
+                             col = "date", group="citation")
             
             time_values$data <-
                 dbGetQuery(sqldb, q) %>%
@@ -440,7 +440,7 @@ function(input, output, session) {
                                  agency = time_values$agency2, 
                                  officer = time_values$officer2, 
                                  outcome = time_values$outcome2, 
-                                 col = "date")
+                                 col = "date", group="citation")
                 
                 time_values$data2 <- dbGetQuery(sqldb, q) %>%
                     mutate(date = lubridate::as_date(date),
@@ -646,17 +646,21 @@ function(input, output, session) {
         q <- build_query(start_date = agency_values$start_date,
                          end_date = agency_values$end_date,
                          agency = agency_values$agency, 
-                         col = "loc, officer, offense")
+                         col = "loc, officer, offense, citation")
         
         agency_data <- dbGetQuery(sqldb, q)
         
         # Calculate total stops
         agency_values$total_stops <- agency_data %>%
+            select(-offense) %>% # Don't double-count multiple offenses in 1 stop
+            distinct() %>%
             count(name="N") %>%
             pull(1)
         
         # Top towns
         agency_values$top_towns <- agency_data %>%
+            select(-offense) %>% # Don't double-count multiple offenses in 1 stop
+            distinct() %>%
             count(loc, name="N") %>%
             slice_max(N, n=10) %>%
             mutate(Rank = min_rank(-N),
@@ -669,6 +673,8 @@ function(input, output, session) {
             
             agency_data %>%
                 filter(!is.na(officer)) %>%
+                select(-offense) %>% # Don't double-count multiple offenses in 1 stop
+                distinct() %>%
                 count(officer, name="N") %>%
                 slice_max(N, n=10) %>%
                 mutate(Rank = min_rank(-N),
@@ -724,12 +730,14 @@ function(input, output, session) {
         q <- build_query(start_date = townover_values$start_date,
                          end_date = townover_values$end_date,
                          town = townover_values$town, 
-                         col = "agency, officer, offense")
+                         col = "agency, officer, offense, citation")
         
         town_data <- dbGetQuery(sqldb, q)
         
         # Calculate total stops
         townover_values$total_stops <- town_data %>%
+            select(-offense) %>% # Don't double-count multiple offenses in 1 stop
+            distinct() %>%
             count(name="N") %>%
             pull(1)
         
@@ -738,6 +746,8 @@ function(input, output, session) {
             
             town_data %>%
                 filter(!is.na(agency)) %>%
+                select(-offense) %>% # Don't double-count multiple offenses in 1 stop
+                distinct() %>%
                 count(agency, name="N") %>%
                 slice_max(N, n=10) %>%
                 mutate(Rank = min_rank(-N),
@@ -751,6 +761,8 @@ function(input, output, session) {
             
             town_data %>%
                 filter(!is.na(officer)) %>%
+                select(-offense) %>% # Don't double-count multiple offenses in 1 stop
+                distinct() %>%
                 count(agency, officer, name="N") %>%
                 slice_max(N, n=10) %>%
                 mutate(Rank = min_rank(-N),
@@ -813,7 +825,7 @@ function(input, output, session) {
                          end_date = town_values$end_date,
                          town = town_values$town, 
                          agency = town_values$agency,
-                         col="race")
+                         col="race", group="citation")
         
         data_town <- dbGetQuery(sqldb, q) %>%
             count(race) %>%
@@ -901,7 +913,7 @@ function(input, output, session) {
                          end_date = officer_values$end_date, 
                          agency = officer_values$agency,
                          officer = officer_values$officer,
-                         col = "race")
+                         col = "race", group="citation")
         
         data_officer <- dbGetQuery(sqldb, q) %>%
             count(race) %>%
@@ -918,7 +930,7 @@ function(input, output, session) {
             q <- build_query(start_date = officer_values$start_date,
                              end_date = officer_values$end_date, 
                              agency = officer_values$agency,
-                             col = "race")
+                             col = "race", group="citation")
         
             data_agency <- dbGetQuery(sqldb, q) %>%
                 count(race) %>%
