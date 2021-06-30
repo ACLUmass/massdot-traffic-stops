@@ -18,35 +18,35 @@ sqldb <- dbPool(
     dbname = "data/statewide_2002_21.sqlite"
 )
 
+# Load other datasets
+officers_per_agency <- read_rds("data/sep/officers_per_agency.rds")
+mapping_df <- read_rds("data/sep/mapping.rds") # stops, not offenses
+ma_towns <- read_rds("data/ma_towns.rds")
+all_loc_agency_v_time <- fread("data/sep/all_loc_agency_stops_v_time.csv")  %>%
+    mutate_at(vars(date, month), as_date)
+all_offenses <- fread("data/sep/all_offenses_by_date.csv")  %>%
+    mutate(date = as_date(date))
+data_mass_race <- read_rds("data/mass_race.RDS") %>%
+    rename(var = race) %>%
+    arrange(var)
+town_race_pop <- readRDS("data/towns_race.rds")
+named_colors <- readRDS("data/offense_colors.rds")
+violations <- read_csv("data/violations.csv",
+                       col_types = cols(
+                           offense = col_character(),
+                           group = col_character()
+                       ))
+
+colors <- c("White" = "#3c3532", 
+            "Black" = "#681b40", 
+            "Hispanic/Latinx" = "#ef404d",
+            "Asian" = "#fabeaf", 
+            "Middle Eastern" =  "#fbb416", 
+            "Native American" = "#a7d7b5", 
+            "Unknown" = "white",
+            "Other" = "white")
+
 function(input, output, session) {
-    
-    # Load other datasets
-    officers_per_agency <- read_rds("data/sep/officers_per_agency.rds")
-    mapping_df <- read_rds("data/sep/mapping.rds")
-    ma_towns <- read_rds("data/ma_towns.rds")
-    all_loc_agency_v_time <- fread("data/sep/all_loc_agency_stops_v_time.csv")  %>%
-        mutate_at(vars(date, month), as_date)
-    all_offenses <- fread("data/sep/all_offenses_by_date.csv")  %>%
-        mutate(date = as_date(date))
-    data_mass_race <- read_rds("data/mass_race.RDS") %>%
-        rename(var = race) %>%
-        arrange(var)
-    town_race_pop <- readRDS("data/towns_race.rds")
-    named_colors <- readRDS("data/offense_colors.rds")
-    violations <- read_csv("data/violations.csv",
-                           col_types = cols(
-                               offense = col_character(),
-                               group = col_character()
-                           ))
-    
-    colors <- c("White" = "#3c3532", 
-                "Black" = "#681b40", 
-                "Hispanic/Latinx" = "#ef404d",
-                "Asian" = "#fabeaf", 
-                "Middle Eastern" =  "#fbb416", 
-                "Native American" = "#a7d7b5", 
-                "Unknown" = "white",
-                "Other" = "white")
     
     empty_plotly <- function(label) {
         plot_ly() %>%
