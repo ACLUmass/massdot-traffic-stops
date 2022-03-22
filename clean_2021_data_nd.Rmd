@@ -1,0 +1,327 @@
+---
+title: "clean_2021_data"
+author: "Lauren Chambers"
+date: "3/17/2022"
+output: html_document
+---
+
+```{r}
+library(tidyverse)
+library(tidycensus)
+library(tigris)
+library(sf)
+library(scales)
+library(RSQLite)
+library(DBI)
+library(data.table)
+library(fst)
+library(lubridate)
+
+options(tigris_use_cache = FALSE)
+```
+
+# 2002-2021 Statewide Data
+## Combine 2002-2021 statewide data into single data frame
+```{r}
+cols_2021 <- cols(
+  `Agency Code` = col_character(),
+  `Issuing Agency` = col_character(),
+  `Officer Id` = col_character(),
+  `Citation #` = col_character(),
+  Type = col_character(),
+  `Event/Written Date` = col_datetime(format = ""),
+  `Time-HH` = col_character(),
+  `Time-MM` = col_character(),
+  `AM-PM` = col_character(),
+  `Location ID` = col_character(),
+  `Location Name` = col_character(),
+  Offense = col_character(),
+  `Offense Description` = col_character(),
+  Race = col_character(),
+  Gender = col_character()
+)
+
+statewide_2002_21 <- read_tsv(file = "../../data/statewide/2002_2021/txt/sqr 19388 2002 citation information.txt",col_types = cols_2021)
+for (year in 2003:2021) {
+  filename <- paste0("../../data/statewide/2002_2021/txt/sqr 19388 ", as.character(year), " citation information.txt")
+
+  statewide_2002_21 <- statewide_2002_21 %>%
+    rbind(read_tsv(file = filename, col_types = cols_2021))
+}
+
+# Parse out year
+statewide_2002_21 <- statewide_2002_21 %>%
+  mutate(year = str_extract(`Event/Written Date`, "^\\d{4}")) %>%
+  mutate(date = ymd(`Event/Written Date`))
+
+# Save to RDS
+saveRDS(statewide_2002_21, "../../data/statewide/2002_2021/statewide_2002_21.rds")
+
+# Save to CSV by year
+for (year_to_write in c(2002, 2004:2021)) {
+  print(year_to_write)
+  statewide_2002_21 %>%
+    filter(year == year_to_write) %>%
+    write_csv(paste0("../../data/statewide/2002_2021/csv/", year_to_write, 
+                     "_sqr_19388_citation_information.csv"))
+}
+```
+
+# Write out as SQL instead
+```{r}
+stops_df <- readRDS("../../data/statewide/2002_2021/statewide_2002_21.rds") %>%
+  # Rename columns to remove spaces
+  rename(agency_code = `Agency Code`,
+         agency = `Issuing Agency`,
+         officer = `Officer Id`,
+         citation = `Citation #`,
+         type = Type,
+         hour = `Time-HH`,
+         minute = `Time-MM`,
+         am_pm = `AM-PM`,
+         loc_code = `Location ID`,
+         loc = `Location Name`,
+         offense = Offense,
+         offense_desc = `Offense Description`,
+         race = Race,
+         gender = `Gender`
+  ) %>%
+  # Remove duplicate date column
+  select(-`Event/Written Date`) %>%
+  # Reduce time columns to just two (no am/pm)
+  mutate_at(vars(hour, minute), as.numeric) %>%
+  mutate(type = str_to_title(type), # Also format type in Title Case
+         hour_24 = ifelse(am_pm == "PM", hour + 12, hour),
+         date = as.Date(date)) %>% 
+  select(-hour, -am_pm) %>%
+  # Whiddle down to fewer columns
+  select(agency, officer, citation, type, date, hour_24, minute, loc, offense=offense_desc, race, gender)  %>%
+  # Group race and gender categories
+  mutate_at(vars(race, gender), tolower) %>%
+  mutate(race = case_when(
+    race %in% c("black", "africa", "capver") ~ "Black",
+    race %in% c("unk", "unknwn") ~ "Unknown",
+    race %in% c("cau", "white") ~ "White",
+    race %in% c("native", "indian", "americ") ~ "Native American",
+    race %in% c("asian", "aspac", "pacifc") ~ "Asian",
+    T ~ str_to_title(race)
+  ),
+  gender = case_when(
+    gender %in% c("np", "non-binary") ~ "Other",
+    gender %in% c("unk", NA) ~ "Unknown",
+    T ~ str_to_title(gender)
+  )) %>%
+  # Group agencies
+  mutate(agency = case_when(
+    grepl("State Police", agency) ~ "Massachusetts State Police (MSP)",
+    grepl("Boston Police", agency) ~ "Boston Police Dept.",
+    T ~ agency)) %>%
+  # Apply order to race and gender
+  mutate(race = case_when(
+    is.na(race) ~ "Unknown",
+    race == "Hisp" ~ "Hispanic/Latinx",
+    race == "Midest" ~ "Middle Eastern",
+    T ~ race
+  ),
+  race = factor(race, levels = c("White", "Black", "Hispanic/Latinx", "Asian", "Middle Eastern", "Native American", "Unknown")),
+  gender = factor(gender, levels = c("Male", "Female", "Other", "Unknown"))) %>%
+  # Get rid of locations that don't vibe with what's in the MassGIS shapefile
+  filter(!loc %in% c("New Hampshire", "Not Assigned", "Other")) %>%
+  mutate(loc = case_when(
+    loc == "Manchester" ~ "Manchester-By-The-Sea",
+    loc %in% c("Allston", "Brighton", "Charlestown", "Dorchester", 
+               "E Boston", "Forest Hills", "Hyde Park", "Jamaica Plain", 
+               "Mattapan", "Roslindale", "Roxbury", "S Boston", "W Roxbury") ~ "Boston",
+    T ~ loc
+  ))
+
+# Open connection
+file_name <- "../app/data/statewide_2002_21.sqlite"
+sqldb <- dbConnect(SQLite(), dbname=file_name)
+
+sqldb %>%
+dbWriteTable(name =  "statewide_2002_21", 
+             collect(stops_df),
+             row.names=FALSE, overwrite=TRUE,
+             append=FALSE, 
+             field.types=c(agency="text", officer="text", 
+                           citation="text", type="text", date="integer", hour_24="integer", 
+                           minute="integer", loc="text", offense="text",
+                           race="text", gender="text"))
+```
+
+# Add indices to SQL database
+```{r}
+# Create SQL indexes on town & agency level
+dbExecute(sqldb, "CREATE INDEX index_town ON statewide_2002_21 (loc)")
+dbExecute(sqldb, "CREATE INDEX index_agency ON statewide_2002_21 (agency)")
+dbExecute(sqldb, "VACUUM;") # shrink size
+dbGetQuery(sqldb, "PRAGMA index_list('statewide_2002_21');")
+```
+
+# DF just for mapping (only date & town)
+```{r}
+stops_df[, .N, .(date, loc)] %>%
+  write_rds("app/data/sep/mapping.rds")
+```
+
+# DF just for agencies (only agency & officer)
+```{r}
+stops_df[, .(agency, officer)] %>%
+  distinct() %>%
+  write_rds("app/data/sep/officers_per_agency.rds")
+```
+
+# DF just for stops v. time (for all agencies & towns)
+```{r}
+stops_df[, .N, .(date, type)] %>%
+  mutate(year = lubridate::year(date),
+                       month = lubridate::floor_date(date, "month"),
+         type = toupper(type)) %>%
+  write_csv("app/data/sep/all_loc_agency_stops_v_time.csv")
+  
+```
+
+
+## All towns/cities/agencies offenses
+```{r}
+all_offenses <- tbl(sqldb, "statewide_2002_21") %>%
+  # select(offense_desc) %>% head(3)
+  # colnames()
+  count(offense_desc, date) %>%
+  collect()
+
+violations <- read_csv("../app/data/violations.csv")
+
+t <- violations %>%
+  separate(offense, c(NA, "offense"), sep=": ") %>%
+  distinct() %>%
+  merge(all_offenses, by.x="offense", by.y="offense_desc", all.y=T) %>%
+  mutate(group = ifelse(str_detect(group, "Boat|Child|Fuel|Toll|Snow|Freight"), "Other", group)) %>%
+  group_by(group, date) %>%
+  summarize(n = sum(n))
+
+t %>%
+ write_csv("../app/data/sep/all_offenses_by_date.csv")
+```
+
+# Pop by race per town
+```{r}
+#c("White", "Black", "Hispanic", "Asian", "Middle Eastern", "Native American", "Unknown")
+
+race_by_town <- get_acs("county subdivision", state = "MA", #table="B03002")#,
+        variables = c(
+          "Total" = "B03002_001",
+          "White" = "B03002_003",
+          "Black" = "B03002_004",
+          "Native American" = "B03002_005",
+          "Asian" = "B03002_006",
+          "Native American" = "B03002_007",
+          "Hispanic/Latinx" = "B03002_012"
+        )) 
+
+town_race_pop <- race_by_town %>%
+  select(TOWN=NAME, race=variable, pop=estimate) %>%
+  mutate(TOWN = str_extract(TOWN, ".*(?=( city| town))"),
+         TOWN = str_replace(TOWN, " Town", "")) %>%
+  filter(pop>0) %>%
+  group_by(TOWN, race) %>%
+  summarize(pop = sum(pop)) %>%
+  group_by(TOWN) %>%
+  mutate(total = pop[race == "Total"],
+         Other = total - sum(pop[race != "Total"])) %>%
+  pivot_wider(names_from=race, values_from=pop) %>%
+  select(-total) %>%
+  pivot_longer(c(-TOWN, -Total),
+               names_to="race", values_to="pop") %>%
+  mutate(pop = replace_na(pop, 0),
+         pct = pop/Total) %>%
+  select(town=TOWN, race, pop, Total, pct)  %>%
+  mutate(town = str_to_title(town),
+         town = str_replace(town, "East ", "E "),
+         town = str_replace(town, "South ", "S "),
+         town = str_replace(town, "West ", "W "),
+         town = str_replace(town, "North ", "N "),
+         town = str_replace(town, "Great ", "Gt "),
+         town = str_replace(town, "Mount ", "Mt ")) %>%
+  ungroup() %>%
+  mutate(race = factor(race, levels = c("White", "Black", "Hispanic/Latinx", "Asian", "Middle Eastern", "Native American", "Other"))) %T>%
+  saveRDS("app/data/towns_race.rds")
+```
+
+# Town-level population & geographical data
+```{r}
+ma_town_pop <- get_acs("county subdivision", state = "MA", variables="B01003_001",
+                       geometry=F)
+
+ma_cntysub_gis <- sf::st_read("../census_crap/townssurvey_shp/TOWNSSURVEY_POLYM.shp")
+ma_cntysub_gis_simp <- rmapshaper::ms_simplify(ma_cntysub_gis)
+
+ma_town <- ma_town_pop %>%
+  filter(estimate > 0) %>%
+  mutate(TOWN = str_extract(NAME, ".*(?=( city| town))"),
+         TOWN = str_replace(TOWN, " Town", ""),
+         TOWN = toupper(TOWN),
+         pop = estimate) %>%
+  # select(NAME, TOWN) %>%
+  merge(ma_cntysub_gis_simp %>%
+          mutate(TOWN = str_replace(TOWN, "MANCHESTER", "MANCHESTER-BY-THE-SEA")), 
+        by = "TOWN", all=T) 
+
+# Check there are no NAs
+ma_town[rowSums(is.na(ma_town)) != 0, ]
+
+ma_town_min <- ma_town %>%
+  select(TOWN, pop, geometry) 
+
+stops_per_county <- stops_df[, .N, loc] %>%
+  filter(!loc %in% c("New Hampshire", "Not Assigned", "Other")) %>%
+  mutate(loc = case_when(
+    loc == "Manchester" ~ "Manchester-By-The-Sea",
+    loc %in% c("Allston", "Brighton", "Charlestown", "Dorchester", 
+               "E Boston", "Forest Hills", "Hyde Park", "Jamaica Plain", 
+               "Mattapan", "Roslindale", "Roxbury", "S Boston", "W Roxbury") ~ "Boston",
+    T ~ loc
+  )) %>%
+  group_by(loc) %>%
+  summarize(N = sum(N))
+
+ma_town_min %>%
+  mutate(town = str_to_title(TOWN),
+         town = str_replace(town, "East ", "E "),
+         town = str_replace(town, "South ", "S "),
+         town = str_replace(town, "West ", "W "),
+         town = str_replace(town, "North ", "N "),
+         town = str_replace(town, "Great ", "Gt "),
+         town = str_replace(town, "Mount ", "Mt ")) %>%
+  merge(stops_per_county, by.x = "town", by.y = "loc", all=T) %>%
+  select(-TOWN) %>%
+  st_as_sf() %>%
+  st_transform('+proj=longlat +datum=WGS84') %>%
+  saveRDS("app/data/ma_towns.rds")
+```
+
+# List of all towns
+```{r}
+ma_town_stops %>% pull(town) %>%
+  saveRDS("app/data/all_towns.rds")
+```
+
+
+# Colors for pie charts
+```{r}
+colors <- c('#1f77b4', '#ff7f0e', '#2ca02c', '#d62728', '#9467bd', "#ffdf69", '#8c564b', '#e377c2', '#17becf')
+
+color_names <- c("Speeding", "Fail to stop/yield/slow/signal", "Inspection", "Seatbelt", "No Registration", "Equipment Violation", "Improper Lane Change", "No License", "Traffic Violation", "Suspended/Revoked License", "Uninsured", "License Plate", "OUI", "Drugs", "Suspended Registration", "Reckless Driving", "Miscellaneous Violation", "Unsafe/Negligent Operation", "Lights Violation", "Other License Violation", "Property Damage", "Phone Use", "Sign/Signal/Light Violation", "Alcohol", "Disobey Police", "Obstruct Emergency Vehicle", "Other Registration Violation", "Death", "Other")
+
+all_colors <- c("#3c3532", colors,
+                lapply(colors, colorspace::lighten, amount=.4),
+                lapply(colors, colorspace::darken, amount=.4),
+                'white') %>% unlist()
+
+named_colors <- all_colors
+names(named_colors) <- color_names
+
+saveRDS(named_colors, "app/data/offense_colors.rds")
+```
+
