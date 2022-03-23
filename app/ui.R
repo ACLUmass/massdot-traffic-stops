@@ -150,9 +150,9 @@ fluidPage(
                                         )),
                                       splitLayout(
                                         dateInput("download_start_date", "Start Date",
-                                                  value = "2002-01-01", min="2002-01-01", max="2021-02-04"),
+                                                  value = "2002-01-01", min="2002-01-01", max="2021-12-31"),
                                         dateInput("download_end_date", "End Date",
-                                                  value = "2021-02-04", min="2002-01-01", max="2021-02-04")),
+                                                  value = "2021-12-31", min="2002-01-01", max="2021-12-31")),
                                       actionButton("download_filters", "Apply Filters")
                                     ),
                                     
@@ -169,9 +169,9 @@ fluidPage(
                                     wellPanel(id="internal_well",
                                       splitLayout(
                                         dateInput("town_start_date", "Start Date",
-                                                  value = "2002-01-01", min="2002-01-01", max="2021-02-04"),
-                                        dateInput("town_end_date", "Start Date",
-                                                  value = "2021-02-04", min="2002-01-01", max="2021-02-04")),
+                                                  value = "2002-01-01", min="2002-01-01", max="2021-12-31"),
+                                        dateInput("town_end_date", "End Date",
+                                                  value = "2021-12-31", min="2002-01-01", max="2021-12-31")),
                                       splitLayout(
                                         radioButtons("towns_radio", "Value Type", 
                                                      choiceValues=c("Total stops", 
@@ -254,9 +254,9 @@ fluidPage(
                                               
                                               splitLayout(
                                                 dateInput("offense_start_date", "Start Date",
-                                                          value = "2002-01-01", min="2002-01-01", max="2021-02-04"),
-                                                dateInput("offense_end_date", "Start Date",
-                                                          value = "2021-02-04", min="2002-01-01", max="2021-02-04")),
+                                                          value = "2002-01-01", min="2002-01-01", max="2021-12-31"),
+                                                dateInput("offense_end_date", "End Date",
+                                                          value = "2021-12-31", min="2002-01-01", max="2021-12-31")),
                                               actionButton("offense_button", "Go")),#style="text-align: center;"),
                                     withSpinner(plotlyOutput("offenses"), type=4, color="#b5b5b5", size=0.5)
                            ),
@@ -270,9 +270,9 @@ fluidPage(
                                                      c(all_agencies)),
                                       splitLayout(
                                         dateInput("agency_start_date", "Start Date",
-                                                  value = "2002-01-01", min="2002-01-01", max="2021-02-04"),
-                                        dateInput("agency_end_date", "Start Date",
-                                                  value = "2021-02-04", min="2002-01-01", max="2021-02-04")),
+                                                  value = "2002-01-01", min="2002-01-01", max="2021-12-31"),
+                                        dateInput("agency_end_date", "End Date",
+                                                  value = "2021-12-31", min="2002-01-01", max="2021-12-31")),
                                       actionButton("agency_button", "Go")),
                                     withSpinner(uiOutput("agency_dashboard"), type=4, color="#b5b5b5", size=0.5)
                            ),
@@ -286,9 +286,9 @@ fluidPage(
                                               selectizeInput("townover_town", "Town/City", all_towns),
                                               splitLayout(
                                                 dateInput("townover_start_date", "Start Date",
-                                                          value = "2002-01-01", min="2002-01-01", max="2021-02-04"),
-                                                dateInput("townover_end_date", "Start Date",
-                                                          value = "2021-02-04", min="2002-01-01", max="2021-02-04")),
+                                                          value = "2002-01-01", min="2002-01-01", max="2021-12-31"),
+                                                dateInput("townover_end_date", "End Date",
+                                                          value = "2021-12-31", min="2002-01-01", max="2021-12-31")),
                                               actionButton("townover_button", "Go")),
                                     withSpinner(uiOutput("townover_dashboard"), type=4, color="#b5b5b5", size=0.5)
                                     ),
@@ -304,9 +304,9 @@ fluidPage(
                                       ),
                                       splitLayout(
                                         dateInput("town_race_start_date", "Start Date",
-                                                  value = "2002-01-01", min="2002-01-01", max="2021-02-04"),
-                                        dateInput("town_race_end_date", "Start Date",
-                                                  value = "2021-02-04", min="2002-01-01", max="2021-02-04")),
+                                                  value = "2002-01-01", min="2002-01-01", max="2021-12-31"),
+                                        dateInput("town_race_end_date", "End Date",
+                                                  value = "2021-12-31", min="2002-01-01", max="2021-12-31")),
                                       actionButton("town_button", "Go")
                                     ),
                                     hidden(img(src="race_legend.png", id="town_race_legend")),
@@ -329,9 +329,9 @@ fluidPage(
                                         ),
                                       splitLayout(
                                         dateInput("officer_race_start_date", "Start Date",
-                                                  value = "2002-01-01", min="2002-01-01", max="2021-02-04"),
-                                        dateInput("officer_race_end_date", "Start Date",
-                                                  value = "2021-02-04", min="2002-01-01", max="2021-02-04")),
+                                                  value = "2002-01-01", min="2002-01-01", max="2021-12-31"),
+                                        dateInput("officer_race_end_date", "End Date",
+                                                  value = "2021-12-31", min="2002-01-01", max="2021-12-31")),
                                       actionButton("officer_button", "Go")
                                     ),
                                     hidden(img(src="race_legend.png", id="officer_race_legend")),
