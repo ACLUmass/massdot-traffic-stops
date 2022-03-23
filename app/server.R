@@ -1,7 +1,7 @@
 library(tidyverse)
 library(shiny)
 library(plotly)
-library(fst)
+#library(fst)
 library(data.table)
 library(leaflet)
 library(lubridate)
@@ -65,7 +65,7 @@ function(input, output, session) {
     }
     
     build_query <- function(start_date="2002-01-01", 
-                            end_date="2021-02-04", 
+                            end_date="2021-12-31", 
                             town="All cities and towns", 
                             agency="All agencies", 
                             officer="All officers", 
@@ -74,7 +74,7 @@ function(input, output, session) {
         query <- paste("SELECT", col, "FROM `statewide_2002_21` WHERE")
         and_needed <- F
         
-        if (start_date != "2002-01-01" | end_date != "2021-02-04") {
+        if (start_date != "2002-01-01" | end_date != "2021-12-31") {
             query <- paste0(query, " `date` BETWEEN ", as.numeric(as_date(start_date)), 
                                 " AND ", as.numeric(as_date(end_date)))
             and_needed <- T
@@ -474,8 +474,8 @@ function(input, output, session) {
         } else if (input$time_type == "Month") {
             link <- "in"
             date_format <- "%b %Y"
-            data <- data[month < ymd("20210201"), .N, .(x=month)]
-            data2 <- if (time_values$compare) data2[month < ymd("20210201"), .N, .(x=month)] else NULL
+            data <- data[month < ymd("20211231"), .N, .(x=month)]
+            data2 <- if (time_values$compare) data2[month < ymd("20211231"), .N, .(x=month)] else NULL
             
         } else if (input$time_type == "Day") {
             link <- "on"
