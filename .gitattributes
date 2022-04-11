@@ -3,3 +3,4 @@ statewide_2002_21.csv filter=lfs diff=lfs merge=lfs -text
 *.sqlite filter=lfs diff=lfs merge=lfs -text
 app/data/sep/*.rds filter=lfs diff=lfs merge=lfs -text
 app/data/sep/*.csv filter=lfs diff=lfs merge=lfs -text
+*sqlite filter=lfs diff=lfs merge=lfs -text
