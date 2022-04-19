@@ -84,9 +84,7 @@ fluidPage(
                                wellPanel(
                                  icon('exclamation-triangle'),
                                  h4("Disclaimer"),
-                                 em("Based on discussions with MassDOT, ACLUM understands that MassDOT’s historical record of traffic stops can change due to updates in reporting requirements, corrections of records, delays by municipalities in reporting their warnings and citations, and other factors. See", 
-                                    a(href="X", "[SHOULD COVER IN BLOG POST]."), 
-                                    "Therefore, the record of traffic stops presented here reflects only the MassDOT database as it was on February 4, 2021.",)
+                                 em("Based on discussions with MassDOT, ACLUM understands that MassDOT’s historical record of traffic stops can change due to updates in reporting requirements, corrections of records, delays by municipalities in reporting their warnings and citations, and other factors. Therefore, the record of traffic stops presented here reflects only the MassDOT database as it was on February 4, 2021.",)
                                )
                            ),
                            
@@ -103,7 +101,7 @@ fluidPage(
                                     
                                     br(),br(),
                                     h4("What's included?"),
-                                    "All stops by police - including the Massachusetts State Police and local town and city police departments - between January 1, 2002 and February 4, 2021. The dataset includes the date and time of the stop, the town where the stop occured, the ID of the police officer, the agency of the police officer, the nature of the traffic violation, and the race, gender, and age of the driver.",
+                                    "All stops by law enforcement officials - including the Massachusetts State Police, university and college police,and local town and city police departments - as documented by MassDOT between January 1, 2002 and February 4, 2021. The dataset includes the date and time of the stop, the town where the stop occured, the ID of the police officer, the agency employing the police officer, the nature of the traffic violation, and the race, gender, and age of the person being stopped.",
                                     
                                     br(),br(),
                                     h4("What's not included?"),
@@ -112,11 +110,10 @@ fluidPage(
                                     br(),br(),
                                     h4("Why does it matter?"),
                                     
-                                    "Do we want a D4J blog to link to here? LINK BLOG",
-                                    "Learn more about traffic policing on the ACLU of Massachusetts website:",
-                                      a(href="#",
+                                    "Learn more about traffic policing in Massachusetts on the Data for Justice",
+                                      a(href="https://data.aclum.org/2021/07/09/19-years-of-traffic-stops-in-massachusetts/",
                                         target="_blank",
-                                        "INSERT LINK HERE."),
+                                        "blog."),
                                     
                                     br(),br(),
                                     h4("Where can I get it?"),
@@ -133,7 +130,7 @@ fluidPage(
                            # Download data --------------------------------------------
                            tabPanel("Download the Data", 
                                     wellPanel(id="internal_well",
-                                              p("This page allows you to select a subset of the MassDOT data to download. If you required the entire 2.8 GB dataset, you can download a compressed version from Google Drive", 
+                                              p("This page allows you to select a subset of the MassDOT data to download. If you required the entire raw 2.8 GB dataset, you can download a compressed version from Google Drive", 
                                                 a("here.", href="https://drive.google.com/file/d/1enQXDsXV7bVtrjiUteQ7g04vL1o-Sv7e/view?usp=sharing"), 
                                                 style="font-style: italic; text-align: center; font-weight: 100;"),
                                       fluidRow(
