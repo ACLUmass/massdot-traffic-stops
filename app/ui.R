@@ -84,9 +84,9 @@ fluidPage(
                                wellPanel(
                                  icon('exclamation-triangle'),
                                  h4("Disclaimer"),
-                                 em("Based on discussions with MassDOT, ACLUM understands that MassDOT’s historical record of traffic stops can change due to updates in reporting requirements, corrections of records, delays by municipalities in reporting their warnings and citations, and other factors. See", 
-                                    a(href="X", "[SHOULD COVER IN BLOG POST]."), 
-                                    "Therefore, the record of traffic stops presented here reflects only the MassDOT database as it was on February 4, 2021.",)
+                                 em("Based on discussions with MassDOT, ACLUM understands that MassDOT’s historical record of traffic stops can change due to updates in reporting requirements, corrections of records, delays by municipalities in reporting their warnings and citations, and other factors.", #. See", 
+                                    #a(href="X", "[SHOULD COVER IN BLOG POST]."), 
+                                    "The record presented here of traffic stops occurring between 2002-2020 reflects only the MassDOT database as it was on February 4, 2021. The record of 2021 traffic stops reflects the MassDOT database as of March 7, 2022.",)
                                )
                            ),
                            
@@ -103,20 +103,20 @@ fluidPage(
                                     
                                     br(),br(),
                                     h4("What's included?"),
-                                    "All stops by police - including the Massachusetts State Police and local town and city police departments - between January 1, 2002 and February 4, 2021. The dataset includes the date and time of the stop, the town where the stop occured, the ID of the police officer, the agency of the police officer, the nature of the traffic violation, and the race, gender, and age of the driver.",
+                                    "All stops by police - including the Massachusetts State Police and local town and city police departments - between January 1, 2002 and December 31, 2021. The dataset includes the date and time of the stop, the town where the stop occured, the ID of the police officer, the agency of the police officer, the nature of the traffic violation, and the race, gender, and age of the driver.",
                                     
                                     br(),br(),
                                     h4("What's not included?"),
                                     "The dataset does not denote whether or not a search was performed or whether any contraband (drugs or firearms) were found, nor does it include the badge number of the police officer. (Note that the officer ID and badge number are not the same.)",
                                     
-                                    br(),br(),
-                                    h4("Why does it matter?"),
-                                    
-                                    "Do we want a D4J blog to link to here? LINK BLOG",
-                                    "Learn more about traffic policing on the ACLU of Massachusetts website:",
-                                      a(href="#",
-                                        target="_blank",
-                                        "INSERT LINK HERE."),
+                                    # br(),br(),
+                                    # h4("Why does it matter?"),
+                                    # 
+                                    # "Do we want a D4J blog to link to here? LINK BLOG",
+                                    # "Learn more about traffic policing on the ACLU of Massachusetts website:",
+                                    #   a(href="#",
+                                    #     target="_blank",
+                                    #     "INSERT LINK HERE."),
                                     
                                     br(),br(),
                                     h4("Where can I get it?"),
@@ -133,8 +133,8 @@ fluidPage(
                            # Download data --------------------------------------------
                            tabPanel("Download the Data", 
                                     wellPanel(id="internal_well",
-                                              p("This page allows you to select a subset of the MassDOT data to download. If you required the entire 2.8 GB dataset, you can download a compressed version from Google Drive", 
-                                                a("here.", href="https://drive.google.com/file/d/1enQXDsXV7bVtrjiUteQ7g04vL1o-Sv7e/view?usp=sharing"), 
+                                              p("This page allows you to select a subset of the MassDOT data to download. If you required the entire 3.2 GB dataset, you can download a compressed version from Google Drive", 
+                                                a("here.", href="https://drive.google.com/file/d/10UuoizSId6sMMBetAa5XTaqGnWdVBgT-/view?usp=sharing", target="_blank"), 
                                                 style="font-style: italic; text-align: center; font-weight: 100;"),
                                       fluidRow(
                                         column(4, selectizeInput("download_town", "Town/City", c("All cities and towns", all_towns))),
