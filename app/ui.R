@@ -6,6 +6,8 @@ library(leaflet)
 library(plotly)
 library(shinyjs)
 
+# Adding test comment
+
 all_agencies <- readRDS("data/all_agencies.RDS")
 all_towns <- readRDS("data/all_towns.rds")
 
