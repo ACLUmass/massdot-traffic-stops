@@ -240,7 +240,7 @@ fluidPage(
                  ),
                  
                  # Stops by offense ------------------------------------------
-                 tabPanel("Stops by offense", 
+                 tabPanel("Offenses Listed On Stops", 
                           wellPanel(id="internal_well",
                                     fluidRow(
                                       column(4, selectizeInput("offense_town", "Town/City", c("All cities and towns", all_towns))),
@@ -261,6 +261,12 @@ fluidPage(
                                       dateInput("offense_end_date", "End Date",
                                                 value = "2021-12-31", min="2002-01-01", max="2021-12-31")),
                                     actionButton("offense_button", "Go")),#style="text-align: center;"),
+                          div(id="dev-wait",
+                              wellPanel(
+                                icon('exclamation-triangle'),
+                                h4("Disclaimer"),em(" Some stops list multiple offenses. These calculations count each offense that is listed."), style = "text-align: center;"
+                              )
+                          ),
                           withSpinner(plotlyOutput("offenses"), type=4, color="#b5b5b5", size=0.5)
                  ),
                  
@@ -297,7 +303,7 @@ fluidPage(
                  ),
                  
                  # Town stops by race ---------------------------------------
-                 tabPanel("Race of Stops by Town", 
+                 tabPanel("Race of Individuals Stopped - By Town", 
                           wellPanel(id="internal_well",
                                     splitLayout(
                                       selectizeInput("town_town", "Town/City", all_towns),
@@ -317,7 +323,7 @@ fluidPage(
                  
                  # "Officer ID Lookup",
                  # Officer stops by race ------------------------------------
-                 tabPanel("Race of Stops by Officer", 
+                 tabPanel("Race of Individuals Stopped - By Officer", 
                           wellPanel(id="internal_well",
                                     splitLayout(
                                       selectizeInput("officer_agency", 

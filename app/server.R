@@ -37,7 +37,7 @@ violations <- read_csv("data/violations.csv",
                            group = col_character()
                        ))
 
-colors <- c("White" = "#3c3532", 
+colors <- c("White" = "#00343A",  #originally: #3C3532
             "Black" = "#681b40", 
             "Hispanic/Latinx" = "#ef404d",
             "Asian" = "#fabeaf", 
@@ -603,12 +603,12 @@ function(input, output, session) {
         if (nrow(data) > 0) {
             
             annotation <- get_legend_name(offense_values$town, offense_values$agency, 
-                                          offense_values$officer, "Offenses from stops",
+                                          offense_values$officer, "Offenses listed on stops",
                                           pie_label=T)
         
             data %>%
                 plot_ly(sort=F,direction = "clockwise",
-                        hovertemplate = '<i>Offense</i>: %{label}<br><i>Number stopped</i>: %{value} (%{percent})<extra></extra>',
+                        hovertemplate = '<i>Offense</i>: %{label}<br><i>Number of times listed on stops</i>: %{value}<br><i>Percentage of total listed offenses</i>: %{percent}<extra></extra>',
                         marker = list(line = list(color = 'lightgrey', width = 1),
                                       colors = offense_colors)) %>%
                 add_pie(labels=~group, values=~n,
@@ -691,7 +691,7 @@ function(input, output, session) {
                 slice_max(N, n=10) %>%
                 separate(offense, into = c("Offense", "Statute"), sep= " \\* | (?=c)") %>%
                 mutate(N = number(N, big.mark=",", accuracy=1)) %>%
-                rename(`Number of Stops` = N)
+                rename(`Number of Times Listed on Stops` = N)
 
         })
 
@@ -707,7 +707,7 @@ function(input, output, session) {
                 div(h4("Most Active Officers"),
                     tableOutput("top_officers"))
             ),
-            h4("Most Common Traffic Violations"),
+            h4("Most Common Cited Traffic Violations"),
             tableOutput("top_offenses")
         )
     })
@@ -780,7 +780,7 @@ function(input, output, session) {
                 slice_max(N, n=10) %>%
                 separate(offense, into = c("Offense", "Statute"), sep= " \\* | (?=c)") %>%
                 mutate(N = number(N, big.mark=",", accuracy=1)) %>%
-                rename(`Number of Stops` = N)
+                rename(`Number of Times Listed on Stops` = N)
 
         })
 
@@ -797,7 +797,7 @@ function(input, output, session) {
                 div(h4("Most Active Officers"),
                     tableOutput("townover_top_officers"))
             ),
-            h4("Most Common Traffic Violations"),
+            h4("Most Common Cited Traffic Violations"),
             tableOutput("townover_top_offenses")
         )
         
@@ -851,7 +851,7 @@ function(input, output, session) {
             town_pop_colors <- colors[data_town_pop$var]
             
             annotation <- get_legend_name(town_values$town, town_values$agency, 
-                                          "All officers", "Race of stops",
+                                          "All officers", "Listed race of individuals stopped",
                                           pie_label=T) %>%
                 str_replace(" in", "\nin")
     
@@ -865,7 +865,7 @@ function(input, output, session) {
                         title = annotation,
                         domain = list(x = c(0, .5), y = c(0, 1)),
                         marker = list(colors = town_stop_colors),
-                        hovertemplate = '<i>Race</i>: %{label}<br><i>Number stopped</i>: %{value} (%{percent})<extra></extra>') %>%
+                        hovertemplate = '<i>Race</i>: %{label}<br><i>Number of times listed on stops</i>: %{value} <br><i>Percentage of total listed races</i>: %{percent}<extra></extra>') %>%
                 add_pie(data = data_town_pop, 
                         title = paste("<span style='font-size:1.2rem'>", 
                                       town_values$town, "Population\n(2018 estimate)\n </span>"),
