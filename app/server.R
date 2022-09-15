@@ -6,11 +6,13 @@ library(data.table)
 library(leaflet)
 library(lubridate)
 library(scales)
+library(Seurat)
 library(shinyjs)
 library(sf)
 library(DBI)
 library(RSQLite)
 library(pool)
+
 
 # Connect to sql database using pool to manage connections
 sqldb <- dbPool(
@@ -37,11 +39,11 @@ violations <- read_csv("data/violations.csv",
                            group = col_character()
                        ))
 
-colors <- c("White" = "#00343A",  #originally: #3C3532
-            "Black" = "#681b40", 
+colors <- c("White" = "#999999",  #originally: #3C3532 # our favorite : 999999
+            "Black" = "#0055aa",  #originally: #681b40
             "Hispanic/Latinx" = "#ef404d",
             "Asian" = "#fabeaf", 
-            "Middle Eastern" =  "#fbb416", 
+            "Middle Eastern" =  "#fbb416", #originally: #fbb416
             "Native American" = "#a7d7b5", 
             "Unknown" = "white",
             "Other" = "white")
@@ -294,7 +296,7 @@ function(input, output, session) {
             )  %>%
             addEasyButton(easyButton(
                 icon="fa-home", title="Reset",
-                onClick=JS("function(btn, map){ 
+                onClick=htmlwidgets::JS("function(btn, map){
                    var groupLayer = map.layerManager.getLayerGroup('poly');
                    map.fitBounds(groupLayer.getBounds());
                }"))) %>%
@@ -468,14 +470,14 @@ function(input, output, session) {
         if (input$time_type == "Year") {
             link <- "in"
             date_format <- "%Y"
-            data <- data[year < 2021, .N, .(x=year)]
-            data2 <- if (time_values$compare) data2[year < 2021, .N, .(x=year)] else NULL
+            data <- data[year <= 2021, .N, .(x=year)]
+            data2 <- if (time_values$compare) data2[year <= 2021, .N, .(x=year)] else NULL
             
         } else if (input$time_type == "Month") {
             link <- "in"
             date_format <- "%b %Y"
-            data <- data[month < ymd("20211231"), .N, .(x=month)]
-            data2 <- if (time_values$compare) data2[month < ymd("20211231"), .N, .(x=month)] else NULL
+            data <- data[month <= ymd("20211231"), .N, .(x=month)]
+            data2 <- if (time_values$compare) data2[month <= ymd("20211231"), .N, .(x=month)] else NULL
             
         } else if (input$time_type == "Day") {
             link <- "on"
@@ -850,6 +852,18 @@ function(input, output, session) {
             town_stop_colors <- colors[data_town$var]
             town_pop_colors <- colors[data_town_pop$var]
             
+            town_stop_text_colors <- BGTextColor(colors[data_town$var],
+                                                 threshold = 186,
+                                                 w3c = TRUE,
+                                                 dark = "#000000",
+                                                 light = "#FFFFFF")
+            
+            town_pop_text_colors <- BGTextColor(colors[data_town_pop$var],
+                                                threshold = 186,
+                                                w3c = TRUE,
+                                                dark = "#000000",
+                                                light = "#FFFFFF")
+            
             annotation <- get_legend_name(town_values$town, town_values$agency, 
                                           "All officers", "Listed race of individuals stopped",
                                           pie_label=T) %>%
@@ -865,12 +879,16 @@ function(input, output, session) {
                         title = annotation,
                         domain = list(x = c(0, .5), y = c(0, 1)),
                         marker = list(colors = town_stop_colors),
+                        textfont = list(color= town_stop_text_colors),
+                        hoverlabel = list(font = list(color = town_stop_text_colors)),
                         hovertemplate = '<i>Race</i>: %{label}<br><i>Number of times listed on stops</i>: %{value} <br><i>Percentage of total listed races</i>: %{percent}<extra></extra>') %>%
                 add_pie(data = data_town_pop, 
                         title = paste("<span style='font-size:1.2rem'>", 
                                       town_values$town, "Population\n(2018 estimate)\n </span>"),
                         domain = list(x = c(.5, 1), y = c(.2, .8)),
                         marker = list(colors = town_pop_colors),
+                        textfont = list(color= town_pop_text_colors),
+                        hoverlabel = list(font = list(color = town_pop_text_colors)),
                         hovertemplate = '<i>Race</i>: %{label}<br><i>Population (2018 estimate)</i>: %{value} (%{percent})<extra></extra>') %>%
                 layout(xaxis = list(showgrid = FALSE, zeroline = FALSE, showticklabels = FALSE),
                        yaxis = list(showgrid = FALSE, zeroline = FALSE, showticklabels = FALSE),
@@ -943,6 +961,23 @@ function(input, output, session) {
             officer_colors <- colors[data_officer$var]
             agency_colors <- colors[data_agency$var]
             
+            officer_text_colors <- BGTextColor(colors[data_officer$var],
+                                                 threshold = 186,
+                                                 w3c = TRUE,
+                                                 dark = "#000000",
+                                                 light = "#FFFFFF")
+            
+            agency_text_colors <- BGTextColor(colors[data_agency$var],
+                                                threshold = 186,
+                                                w3c = TRUE,
+                                                dark = "#000000",
+                                                light = "#FFFFFF")
+            mass_text_colors <- BGTextColor(colors,
+                                            threshold = 186,
+                                            w3c = TRUE,
+                                            dark = "#000000",
+                                            light = "#FFFFFF")
+            
             officer_annotation <- get_legend_name("All cities and towns", officer_values$agency, 
                                           officer_values$officer, "Stops",
                                           pie_label=T) %>%
@@ -952,26 +987,32 @@ function(input, output, session) {
     
             plot_ly(sort=F,
                     direction = "clockwise",
-                    hovertemplate = '<i>Race</i>: %{label}<br><i>Number stopped</i>: %{value} (%{percent})<extra></extra>',
+                    hovertemplate = '<i>Race</i>: %{label}<br><i>Number of times listed on stops</i>: %{value} <br><i>Percentage of total listed races</i>: %{percent}<extra></extra>',
                     marker = list(line = list(color = 'lightgrey', width = 1)),
                     labels = ~var, values = ~n,
                     textposition = "inside") %>%
                 add_pie(data = data_officer,
                         title = officer_annotation,
                         domain = list(x = c(.25, 0.75), y = c(0.3, 1)),
-                        marker = list(colors = officer_colors)) %>%
+                        marker = list(colors = officer_colors),
+                        textfont = list(color= officer_text_colors),
+                        hoverlabel = list(font = list(color = officer_text_colors))) %>%
                 add_pie(data = data_agency, 
                         title = paste0("<span style='font-size:1.2rem; ", outline_css,
                                        "'>Stops by the\n",
                                        officer_values$agency,
                                        "</span>"),
                         domain = list(x = c(0, .4), y = c(0, 0.5)),
-                        marker = list(colors = agency_colors)) %>%
+                        marker = list(colors = agency_colors),
+                        textfont = list(color= agency_text_colors),
+                        hoverlabel = list(font = list(color = agency_text_colors))) %>%
                 add_pie(data = data_mass_race, 
                         title = paste0("<span style='font-size:1.2rem; ", outline_css, 
                                        "'>All Massachusetts Stops\n </span>"),
                         domain = list(x = c(.6, 1), y = c(0, 0.5)),
-                        marker = list(colors = colors)) %>%
+                        marker = list(colors = colors),
+                        textfont = list(color= mass_text_colors),
+                        hoverlabel = list(font = list(color = mass_text_colors))) %>%
                 layout(xaxis = list(showgrid = FALSE, zeroline = FALSE, showticklabels = FALSE),
                        yaxis = list(showgrid = FALSE, zeroline = FALSE, showticklabels = FALSE),
                        showlegend = FALSE,
